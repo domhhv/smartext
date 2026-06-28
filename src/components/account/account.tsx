@@ -57,7 +57,7 @@ function useApiKeyRow(provider: 'openai' | 'claude') {
       setIsEditing(false);
       setServerValidation(null);
       form.reset();
-    } catch (error) {
+    } catch {
       setServerValidation({ error: 'Failed to save API key. Please try again.', isValid: false });
     } finally {
       setIsSaving(false);
@@ -83,7 +83,7 @@ function useApiKeyRow(provider: 'openai' | 'claude') {
       setIsEditing(false);
       setServerValidation(null);
       form.reset();
-    } catch (error) {
+    } catch {
       setServerValidation({ error: 'Failed to remove API key. Please try again.', isValid: false });
     } finally {
       setIsRemoving(false);
@@ -96,7 +96,7 @@ function useApiKeyRow(provider: 'openai' | 'claude') {
       setServerValidation(null);
       const result = await validateApiKeyWithServer(value, provider);
       setServerValidation({ ...result, tested: true });
-    } catch (error) {
+    } catch {
       setServerValidation({ error: 'Connection test failed. Please try again.', isValid: false, tested: true });
     } finally {
       setIsTesting(false);

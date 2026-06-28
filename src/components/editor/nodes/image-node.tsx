@@ -13,16 +13,16 @@ import type { JSX } from 'react';
 
 import ImageComponent from './image-component';
 
-export interface ImagePayload {
+type ImagePayload = {
   altText: string;
+  height?: 'inherit' | number;
+  key?: NodeKey;
+  maxWidth?: number;
   src: string;
   width?: 'inherit' | number;
-  height?: 'inherit' | number;
-  maxWidth?: number;
-  key?: NodeKey;
-}
+};
 
-export type SerializedImageNode = Spread<
+type SerializedImageNode = Spread<
   {
     altText: string;
     height?: 'inherit' | number;

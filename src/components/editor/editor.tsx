@@ -141,7 +141,6 @@ export default function Editor() {
       <LinkPlugin validateUrl={validateUrl} />
       <OnChangePlugin onChange={handleEditorChange} />
       <MarkdownShortcutPlugin transformers={ENHANCED_LEXICAL_TRANSFORMERS} />
-      {/* eslint-disable-next-line react-hooks/refs */}
       {floatingAnchorRef.current && <FloatingLinkEditorPlugin anchor={floatingAnchorRef.current} />}
     </div>
   );

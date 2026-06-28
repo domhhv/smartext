@@ -1,12 +1,12 @@
 import * as React from 'react';
 
-interface UseTooltipGroupReturn {
+type UseTooltipGroupReturn = {
   getTooltipProps: () => {
     delayDuration: number;
     onMouseEnter: () => void;
   };
   onGroupMouseLeave: () => void;
-}
+};
 
 export default function useTooltipGroup(normalDelay = 500, skipDelayWindow = 300): UseTooltipGroupReturn {
   const [isInSkipDelayWindow, setIsInSkipDelayWindow] = React.useState(false);

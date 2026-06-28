@@ -36,7 +36,7 @@ export default function Chat({ hasApiKey, isAuthenticated }: ChatProps) {
   const [editor] = useLexicalComposerContext();
   const [model, setModel] = React.useState('gpt-5.5');
   const { setStatus } = React.use(ChatStatusContext);
-  const { addToolResult, error, messages, sendMessage, status } = useChat<
+  const { addToolOutput, error, messages, sendMessage, status } = useChat<
     UIMessage<unknown, UIDataTypes, EditorCommandTools>
   >({
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
@@ -53,7 +53,7 @@ export default function Chat({ hasApiKey, isAuthenticated }: ChatProps) {
           type: 'insertParagraph',
         });
 
-        void addToolResult({
+        void addToolOutput({
           output: result,
           tool: toolName,
           toolCallId,
@@ -66,7 +66,7 @@ export default function Chat({ hasApiKey, isAuthenticated }: ChatProps) {
           type: 'editParagraph',
         });
 
-        void addToolResult({
+        void addToolOutput({
           output: result,
           tool: toolName,
           toolCallId,
@@ -79,7 +79,7 @@ export default function Chat({ hasApiKey, isAuthenticated }: ChatProps) {
           type: 'formatText',
         });
 
-        void addToolResult({
+        void addToolOutput({
           output: result,
           tool: toolName,
           toolCallId,

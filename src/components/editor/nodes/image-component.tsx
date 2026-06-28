@@ -1,12 +1,12 @@
 import { useState } from 'react';
 
-interface ImageComponentProps {
-  src: string;
+type ImageComponentProps = {
   altText: string;
-  width: 'inherit' | number;
   height: 'inherit' | number;
   maxWidth: number;
-}
+  src: string;
+  width: 'inherit' | number;
+};
 
 function BrokenImage() {
   return (
@@ -39,7 +39,6 @@ function LazyImage({ altText, height, maxWidth, src, width }: ImageComponentProp
   }
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt={altText}

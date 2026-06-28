@@ -10,7 +10,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 ### Prerequisites
 
-- Node.js 22.22.3 or higher
+- Node.js 24.18.0 or higher
 - npm 10.9.8 or higher
 - OpenAI API key for testing
 
