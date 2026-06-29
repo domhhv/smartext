@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import markdown from '@eslint/markdown';
 import lexical from '@lexical/eslint-plugin';
 import stylistic from '@stylistic/eslint-plugin';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
@@ -149,6 +150,13 @@ export default defineConfig(
         globals: {
           ...globals.node,
         },
+      },
+    },
+    {
+      extends: ['markdown/recommended'],
+      files: ['**/*.md'],
+      plugins: {
+        markdown,
       },
     },
   ],

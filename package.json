@@ -113,6 +113,7 @@
     "@commitlint/cli": "^21.1.0",
     "@commitlint/config-conventional": "^21.1.0",
     "@eslint/js": "^9.39.4",
+    "@eslint/markdown": "^8.0.2",
     "@lexical/eslint-plugin": "^0.46.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@tailwindcss/postcss": "^4.3.1",

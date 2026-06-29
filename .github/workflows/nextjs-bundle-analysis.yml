@@ -41,7 +41,7 @@ jobs:
           cache-name: cache-next-build
         with:
           path: .next/cache
-          key: ${{ runner.os }}-next-build-${{ hashFiles('package-lock.json', 'next.config.*') }}
+          key: ${{ runner.os }}-node-24.18.0-next-build-${{ hashFiles('package-lock.json', 'next.config.*') }}
           restore-keys: |
             ${{ runner.os }}-next-build-
 

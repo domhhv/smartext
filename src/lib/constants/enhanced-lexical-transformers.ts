@@ -1,3 +1,4 @@
+import { HorizontalRuleNode, $createHorizontalRuleNode } from '@lexical/extension';
 import type { ElementTransformer, TextMatchTransformer, TextFormatTransformer } from '@lexical/markdown';
 import {
   CHECK_LIST,
@@ -5,6 +6,7 @@ import {
   $convertFromMarkdownString,
   TRANSFORMERS as BASE_LEXICAL_TRANSFORMERS,
 } from '@lexical/markdown';
+import { $isHorizontalRuleNode } from '@lexical/react/LexicalHorizontalRuleNode';
 import {
   TableNode,
   $isTableNode,
@@ -184,6 +186,26 @@ const TABLE: ElementTransformer = {
   },
 };
 
+const HR: ElementTransformer = {
+  dependencies: [HorizontalRuleNode],
+  regExp: /^(---|\*\*\*|___)\s?$/,
+  type: 'element',
+  export: (node: LexicalNode) => {
+    return $isHorizontalRuleNode(node) ? '***' : null;
+  },
+  replace: (parentNode, _1, _2, isImport) => {
+    const line = $createHorizontalRuleNode();
+
+    if (isImport || parentNode.getNextSibling() != null) {
+      parentNode.replace(line);
+    } else {
+      parentNode.insertBefore(line);
+    }
+
+    line.selectNext();
+  },
+};
+
 const SUPERSCRIPT: TextFormatTransformer = {
   format: ['superscript'],
   tag: '^',
@@ -258,6 +280,7 @@ const IMAGE: TextMatchTransformer = {
 
 const ENHANCED_LEXICAL_TRANSFORMERS = [
   CHECK_LIST,
+  HR,
   TABLE,
   IMAGE,
   SUPERSCRIPT,

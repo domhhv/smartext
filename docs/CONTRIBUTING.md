@@ -11,8 +11,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
 ### Prerequisites
 
 - Node.js 24.18.0 or higher
-- npm 10.9.8 or higher
-- OpenAI API key for testing
+- npm 11.16.0 or higher
 
 ### Development Setup
 
@@ -85,7 +84,7 @@ Types:
 
 Examples:
 
-```
+```text
 feat(editor): add table insertion command
 fix(chat): resolve streaming message duplication
 docs(readme): update installation instructions
@@ -197,7 +196,7 @@ const items: string[] = ['a', 'b', 'c'];
 
 ### Key Directories
 
-```
+```text
 src/
 ├── app/           # Next.js App Router
 ├── components/    # React components
