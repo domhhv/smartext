@@ -1,0 +1,9 @@
+[mcp_servers.Sentry]
+url = "https://mcp.sentry.dev/mcp/doms-org/smartext"
+
+[mcp_servers.next-devtools]
+command = "npx"
+args = [
+    "-y",
+    "next-devtools-mcp@latest",
+]

@@ -15,15 +15,15 @@ import { nanoid } from 'nanoid';
 import Image from 'next/image';
 import * as React from 'react';
 import type {
-  FormEvent,
   ReactNode,
   RefObject,
   ChangeEvent,
+  SubmitEvent,
   ComponentProps,
   HTMLAttributes,
-  FormEventHandler,
   PropsWithChildren,
   ChangeEventHandler,
+  SubmitEventHandler,
   KeyboardEventHandler,
   ClipboardEventHandler,
 } from 'react';
@@ -381,7 +381,7 @@ export type PromptInputProps = Omit<HTMLAttributes<HTMLFormElement>, 'onSubmit' 
   maxFiles?: number;
   maxFileSize?: number; // bytes
   onError?: (err: { code: 'max_files' | 'max_file_size' | 'accept'; message: string }) => void;
-  onSubmit: (message: PromptInputMessage, event: FormEvent<HTMLFormElement>) => void | Promise<void>;
+  onSubmit: (message: PromptInputMessage, event: SubmitEvent<HTMLFormElement>) => void | Promise<void>;
 };
 
 export function PromptInput({
@@ -684,7 +684,7 @@ export function PromptInput({
     };
   }, [files, add, remove, clear, openFileDialog]);
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
+  const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
 
     const form = event.currentTarget;
@@ -739,7 +739,7 @@ export function PromptInput({
             controller.textInput.clear();
           }
         }
-      } catch (error) {
+      } catch {
         // Don't clear on error - user may want to retry
       }
     });
@@ -975,22 +975,22 @@ export function PromptInputSubmit({
   );
 }
 
-interface SpeechRecognition extends EventTarget {
+type SpeechRecognition = EventTarget & {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
+  onend: ((this: SpeechRecognition, ev: Event) => void) | null;
+  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => void) | null;
+  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void) | null;
+  onstart: ((this: SpeechRecognition, ev: Event) => void) | null;
   start(): void;
   stop(): void;
-  onstart: ((this: SpeechRecognition, ev: Event) => void) | null;
-  onend: ((this: SpeechRecognition, ev: Event) => void) | null;
-  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void) | null;
-  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => void) | null;
-}
+};
 
-interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
+type SpeechRecognitionEvent = Event & {
   resultIndex: number;
-}
+  results: SpeechRecognitionResultList;
+};
 
 type SpeechRecognitionResultList = {
   [index: number]: SpeechRecognitionResult;
@@ -1010,11 +1010,12 @@ type SpeechRecognitionAlternative = {
   transcript: string;
 };
 
-interface SpeechRecognitionErrorEvent extends Event {
+type SpeechRecognitionErrorEvent = {
   error: string;
-}
+} & Event;
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
   interface Window {
     SpeechRecognition: {
       new (): SpeechRecognition;

@@ -1,7 +1,14 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
 import { currentUser } from '@clerk/nextjs/server';
-import { streamText, stepCountIs, type UIMessage, convertToModelMessages } from 'ai';
+import {
+  streamText,
+  stepCountIs,
+  type UIMessage,
+  toUIMessageStream,
+  convertToModelMessages,
+  createUIMessageStreamResponse,
+} from 'ai';
 
 import { tools } from '@/lib/models/editor-commands';
 import { decryptKey } from '@/lib/utils/encryption';
@@ -50,5 +57,7 @@ export async function POST(req: Request) {
     },
   });
 
-  return result.toUIMessageStreamResponse();
+  return createUIMessageStreamResponse({
+    stream: toUIMessageStream({ stream: result.stream }),
+  });
 }

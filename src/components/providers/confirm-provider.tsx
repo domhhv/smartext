@@ -14,13 +14,13 @@ import {
   AlertDialogDescription,
 } from '@/components/ui/alert-dialog';
 
-export interface ConfirmOptions {
-  title?: string;
-  description?: string | ReactNode;
-  confirmText?: string;
+type ConfirmOptions = {
   cancelText?: string;
+  confirmText?: string;
+  description?: string | ReactNode;
+  title?: string;
   variant?: 'default' | 'destructive';
-}
+};
 
 type ConfirmContextType = {
   confirm: (options?: ConfirmOptions) => Promise<boolean>;
@@ -28,9 +28,9 @@ type ConfirmContextType = {
 
 const ConfirmContext = React.createContext<ConfirmContextType | null>(null);
 
-interface ConfirmState extends ConfirmOptions {
+type ConfirmState = ConfirmOptions & {
   open: boolean;
-}
+};
 
 export default function ConfirmProvider({ children }: PropsWithChildren) {
   const [state, setState] = React.useState<ConfirmState>({

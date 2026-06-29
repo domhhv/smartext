@@ -16,7 +16,7 @@ import DevelopmentBanner from '@/components/layout/development-banner';
 import Sidebar from '@/components/layout/sidebar';
 import ConfirmProvider from '@/components/providers/confirm-provider';
 import DocumentProvider from '@/components/providers/document-provider';
-import LexicalComposerProvider from '@/components/providers/lexical-composer-provider';
+import LexicalExtensionComposerProvider from '@/components/providers/lexical-extension-composer-provider';
 import SidebarProvider from '@/components/providers/sidebar-provider';
 import Toaster from '@/components/ui/sonner';
 import createClerkSupabaseSsrClient from '@/lib/utils/create-clerk-supabase-ssr-client';
@@ -105,9 +105,9 @@ export default function RootLayout({ children }: Readonly<React.PropsWithChildre
         <ThemeProvider enableSystem attribute="class" defaultTheme="system" disableTransitionOnChange>
           <ClerkProvider appearance={{ cssLayerName: 'clerk', theme: shadcn, variables: { fontSize: { lg: '18px' } } }}>
             <ConfirmProvider>
-              <LexicalComposerProvider>
+              <LexicalExtensionComposerProvider>
                 <DocumentsProvider>{children}</DocumentsProvider>
-              </LexicalComposerProvider>
+              </LexicalExtensionComposerProvider>
             </ConfirmProvider>
           </ClerkProvider>
         </ThemeProvider>

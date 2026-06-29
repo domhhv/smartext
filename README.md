@@ -89,8 +89,8 @@ Smartext takes a different approach:
 
 ### Prerequisites
 
-- Node.js 22.22.3 or higher
-- npm 10.9.8 or higher
+- Node.js 24.18.0 or higher
+- npm 11.16.0 or higher
 - Supabase CLI
 - Docker for running local Supabase instance
 - Clerk development keys for local authentication

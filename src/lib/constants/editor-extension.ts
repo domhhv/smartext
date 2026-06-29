@@ -1,39 +1,41 @@
 import { CodeNode } from '@lexical/code-core';
+import { HorizontalRuleNode, HorizontalRuleExtension } from '@lexical/extension';
 import { LinkNode, AutoLinkNode } from '@lexical/link';
 import { ListNode, ListItemNode } from '@lexical/list';
-import type { InitialConfigType } from '@lexical/react/LexicalComposer';
-import { HorizontalRuleNode } from '@lexical/react/LexicalHorizontalRuleNode';
 import { QuoteNode, HeadingNode } from '@lexical/rich-text';
 import { TableNode, TableRowNode, TableCellNode } from '@lexical/table';
-import { LineBreakNode } from 'lexical';
+import { LineBreakNode, defineExtension } from 'lexical';
 import { toast } from 'sonner';
 
 import { ImageNode } from '@/components/editor/nodes/image-node';
 import getErrorMessage from '@/lib/utils/get-error-message';
 
-const INITIAL_EDITOR_CONFIG: InitialConfigType = {
-  editorState: null,
+const LEXICAL_EDITOR_EXTENSION = defineExtension({
+  dependencies: [HorizontalRuleExtension],
+  name: 'MyEditor',
   namespace: 'MyEditor',
+  nodes() {
+    return [
+      HeadingNode,
+      ListNode,
+      ListItemNode,
+      CodeNode,
+      QuoteNode,
+      AutoLinkNode,
+      LinkNode,
+      TableNode,
+      TableCellNode,
+      HorizontalRuleNode,
+      TableRowNode,
+      LineBreakNode,
+      ImageNode,
+    ];
+  },
   onError: (error) => {
     toast('An error occurred in the editor', {
       description: getErrorMessage(error),
     });
   },
-  nodes: [
-    HeadingNode,
-    ListNode,
-    ListItemNode,
-    CodeNode,
-    QuoteNode,
-    AutoLinkNode,
-    LinkNode,
-    TableNode,
-    TableCellNode,
-    TableRowNode,
-    LineBreakNode,
-    HorizontalRuleNode,
-    ImageNode,
-  ],
   theme: {
     hr: 'border-t border-slate-200 my-4',
     image: 'my-4',
@@ -89,6 +91,6 @@ const INITIAL_EDITOR_CONFIG: InitialConfigType = {
       uppercase: 'uppercase',
     },
   },
-};
+});
 
-export default INITIAL_EDITOR_CONFIG;
+export default LEXICAL_EDITOR_EXTENSION;

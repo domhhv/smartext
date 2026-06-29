@@ -1,6 +1,6 @@
-# CLAUDE.md
+# Purpose
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents when working with code in this repository.
 
 ## Development Commands
 
@@ -24,14 +24,14 @@ npm run prettier:write   # Auto-format code
 ### Key Technologies
 
 - **Framework**: Next.js 16 with App Router and Turbopack
-- **Editor**: Lexical 0.35.0 (Facebook's rich text editor)
+- **Editor**: Lexical 0.46.0 (Facebook's rich text editor)
 - **AI**: Vercel AI SDK with OpenAI integration and tool calling
 - **Styling**: Tailwind CSS v4 with OKLCH color system
 - **UI**: Radix UI primitives + shadcn/ui (New York style)
 
 ### Core Architecture
 
-```
+```text
 src/
 ├── app/                    # Next.js App Router
 │   ├── api/chat/route.ts  # AI chat endpoint with tool calling
@@ -80,8 +80,8 @@ Key files for AI functionality:
 
 ### Environment Requirements
 
-- **Node.js**: 22
-- **Environment Variable**: `OPENAI_API_KEY`, optional (can also be set in the UI)
+- **Node.js**: 24.18.0
+- **npm**: 11.16.0
 
 ### Code Quality Setup
 
