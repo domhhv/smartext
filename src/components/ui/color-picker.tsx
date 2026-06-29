@@ -1,8 +1,8 @@
 'use client';
 
-import * as Slider from '@radix-ui/react-slider';
 import Color from 'color';
 import { PipetteIcon } from 'lucide-react';
+import { Slider } from 'radix-ui';
 import * as React from 'react';
 import type { ComponentProps, HTMLAttributes } from 'react';
 
