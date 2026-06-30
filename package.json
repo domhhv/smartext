@@ -28,11 +28,15 @@
     "url": "https://github.com/domhhv/smartext.git"
   },
   "license": "MIT",
-  "author": "Dominik Hryshaiev <domhryshaiev@gmail.com>",
+  "author": {
+    "name": "Dominik Hryshaiev",
+    "email": "domhryshaiev@gmail.com",
+    "url": "https://domhhv.com"
+  },
   "scripts": {
     "analyze": "next experimental-analyze",
     "prebuild": "npm run typecheck && npm run eslint:check && npm run prettier:check",
-    "build": "next build",
+    "build": "TURBOPACK_STATS=1 next build",
     "build:webpack": "next build --webpack",
     "db:gen-types": "supabase gen types --lang=typescript --schema public --schema auth --schema storage --local > supabase/database.types.ts && eslint --fix supabase/database.types.ts",
     "dev": "next dev",
@@ -96,6 +100,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@bundle-stats/plugin-webpack-filter": "^4.22.2",
     "@commitlint/cli": "^21.1.0",
     "@commitlint/config-conventional": "^21.1.0",
     "@eslint/js": "^9.39.4",
