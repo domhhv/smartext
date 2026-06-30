@@ -1,18 +1,31 @@
 import 'server-only';
 import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
 
-const SECRET = process.env.ENCRYPTION_SECRET;
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH_BYTES = 12;
 
-if (!SECRET) {
-  throw new Error('ENCRYPTION_SECRET is required');
-}
+let cachedKey: Buffer | null = null;
 
-const KEY = Buffer.from(SECRET, 'hex');
+function getKey(): Buffer {
+  if (cachedKey) {
+    return cachedKey;
+  }
 
-if (KEY.length !== 32) {
-  throw new Error('ENCRYPTION_SECRET must be 32 bytes hex (64 hex chars)');
+  const secret = process.env.ENCRYPTION_SECRET;
+
+  if (!secret) {
+    throw new Error('ENCRYPTION_SECRET is required');
+  }
+
+  const key = Buffer.from(secret, 'hex');
+
+  if (key.length !== 32) {
+    throw new Error('ENCRYPTION_SECRET must be 32 bytes hex (64 hex chars)');
+  }
+
+  cachedKey = key;
+
+  return cachedKey;
 }
 
 export function encryptKey(plaintext: string) {
@@ -20,8 +33,9 @@ export function encryptKey(plaintext: string) {
     return '';
   }
 
+  const key = getKey();
   const iv = randomBytes(IV_LENGTH_BYTES);
-  const cipher = createCipheriv(ALGORITHM, KEY, iv);
+  const cipher = createCipheriv(ALGORITHM, key, iv);
 
   let encrypted = cipher.update(plaintext, 'utf8', 'hex');
   encrypted += cipher.final('hex');
@@ -45,7 +59,7 @@ export function decryptKey(ciphertext: string) {
   const iv = Buffer.from(ivHex, 'hex');
   const authTag = Buffer.from(authTagHex, 'hex');
 
-  const decipher = createDecipheriv(ALGORITHM, KEY, iv);
+  const decipher = createDecipheriv(ALGORITHM, getKey(), iv);
   decipher.setAuthTag(authTag);
 
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');

@@ -79,37 +79,37 @@ export default function AdaptiveLayout({ chat, editor }: AdaptiveLayoutProps) {
 
   if (!isMobile) {
     if (!isChatVisible) {
-      return <div className="h-full">{editor}</div>;
+      return <div className="h-full min-h-0">{editor}</div>;
     }
 
     return (
-      <ResizablePanelGroup className="min-h-full" orientation="horizontal">
-        <ResizablePanel minSize="10%" defaultSize="30%">
-          {chat}
+      <ResizablePanelGroup orientation="horizontal" className="h-full min-h-0">
+        <ResizablePanel minSize="20%" defaultSize="40%">
+          <div className="h-full min-h-0">{chat}</div>
         </ResizablePanel>
         <ResizableHandle isWithHandle />
-        <ResizablePanel minSize="40%" defaultSize="70%">
-          {editor}
+        <ResizablePanel minSize="40%" defaultSize="60%">
+          <div className="h-full min-h-0">{editor}</div>
         </ResizablePanel>
       </ResizablePanelGroup>
     );
   }
 
   if (!isChatVisible) {
-    return <div className="flex h-full flex-col">{editor}</div>;
+    return <div className="flex h-full min-h-0 flex-col">{editor}</div>;
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="relative flex-1 overflow-hidden">
         {viewMode === 'split' ? (
           <ResizablePanelGroup className="h-full" orientation="vertical">
             <ResizablePanel minSize="45%" defaultSize="50%">
-              {chat}
+              <div className="h-full min-h-0">{chat}</div>
             </ResizablePanel>
             <ResizableHandle isWithHandle />
             <ResizablePanel minSize="30%" defaultSize="50%">
-              {editor}
+              <div className="h-full min-h-0">{editor}</div>
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (
