@@ -35,7 +35,7 @@ export default function DevelopmentBanner() {
   }
 
   return (
-    <div className="bg-accent text-foreground sticky top-0 flex w-full flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 py-2 text-center text-sm font-medium">
+    <div className="bg-accent text-foreground z-20 flex w-full flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 py-2 text-center text-sm font-medium">
       <span>
         🚧&nbsp;&nbsp;&nbsp;This app is in early development. Some unexpected bugs might occur. New features are coming
         soon!

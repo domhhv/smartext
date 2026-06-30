@@ -73,14 +73,14 @@ export default function Editor() {
   }
 
   return (
-    <div className="editor group relative h-full overflow-y-auto">
+    <div className="editor group relative flex h-full min-h-0 flex-col overflow-hidden">
       <ToolbarPlugin />
       <RichTextPlugin
         ErrorBoundary={LexicalErrorBoundary}
         contentEditable={
           <div
             ref={floatingAnchorRef}
-            className="border-border focus-within:border-foreground group relative h-[calc(100%-52px)] overflow-y-auto border-t px-[1px] pb-[1px] focus-within:border focus-within:px-0 focus-within:pb-0.5"
+            className="border-border focus-within:border-foreground group relative min-h-0 flex-1 overflow-y-auto border-t px-[1px] pb-[1px] focus-within:border focus-within:px-0 focus-within:pb-0.5"
           >
             <ContentEditable
               className="h-fit p-4 outline-none"

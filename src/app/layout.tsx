@@ -123,11 +123,11 @@ async function DocumentsProvider({ children }: Readonly<React.PropsWithChildren>
   return (
     <DocumentProvider documents={documents} isAuthenticated={isAuthenticated}>
       <SidebarProvider>
-        <div className="bg-background relative flex h-full flex-col">
+        <div className="bg-background relative flex h-full flex-col overflow-hidden">
           <DevelopmentBanner />
-          <div className="relative flex h-full flex-1">
+          <div className="relative flex min-h-0 flex-1 overflow-hidden">
             <Sidebar documents={documents} isDocumentsError={!!error} isAuthenticated={isAuthenticated} />
-            <main className="flex-1 overflow-scroll">{children}</main>
+            <main className="min-w-0 flex-1 overflow-hidden">{children}</main>
           </div>
           <Analytics />
           <SpeedInsights />
