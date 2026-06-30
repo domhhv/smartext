@@ -1,15 +1,21 @@
+import filterWebpackStats from '@bundle-stats/plugin-webpack-filter';
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 import { StatsWriterPlugin } from 'webpack-stats-plugin';
 
 const nextConfig: NextConfig = {
   webpack: (config, options) => {
-    const { dev, isServer } = options;
+    const { dev, isServer, nextRuntime } = options;
 
-    if (!dev && !isServer) {
+    if (!dev && !isServer && !nextRuntime) {
       config.plugins.push(
         new StatsWriterPlugin({
           filename: '../webpack-stats.json',
+          transform: (webpackStats) => {
+            const filteredSource = filterWebpackStats(webpackStats);
+
+            return JSON.stringify(filteredSource);
+          },
           stats: {
             assets: true,
             chunks: true,
