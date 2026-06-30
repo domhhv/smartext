@@ -29,7 +29,6 @@ import {
   PromptInputAttachment,
   PromptInputAttachments,
   type PromptInputMessage,
-  PromptInputSpeechButton,
   PromptInputActionMenuContent,
   PromptInputActionMenuTrigger,
   PromptInputActionAddAttachments,
@@ -104,7 +103,6 @@ function ChatPromptInput({
                   <PromptInputActionAddAttachments />
                 </PromptInputActionMenuContent>
               </PromptInputActionMenu>
-              <PromptInputSpeechButton textareaRef={textareaRef} />
               <ModelSelector open={modelSelectorOpen} onOpenChange={setModelSelectorOpen}>
                 <ModelSelectorTrigger asChild>
                   <PromptInputButton>
