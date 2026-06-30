@@ -4,7 +4,13 @@ import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH_BYTES = 12;
 
+let cachedKey: Buffer | null = null;
+
 function getKey(): Buffer {
+  if (cachedKey) {
+    return cachedKey;
+  }
+
   const secret = process.env.ENCRYPTION_SECRET;
 
   if (!secret) {
@@ -17,7 +23,9 @@ function getKey(): Buffer {
     throw new Error('ENCRYPTION_SECRET must be 32 bytes hex (64 hex chars)');
   }
 
-  return key;
+  cachedKey = key;
+
+  return cachedKey;
 }
 
 export function encryptKey(plaintext: string) {
