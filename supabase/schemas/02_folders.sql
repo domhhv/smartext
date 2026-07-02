@@ -44,6 +44,9 @@ FOR UPDATE
 TO "authenticated"
 USING (
     ((SELECT "auth"."jwt"() ->> 'sub') = ("user_id")::TEXT) -- noqa: CV10
+)
+WITH CHECK (
+    ((SELECT "auth"."jwt"() ->> 'sub') = ("user_id")::TEXT) -- noqa: CV10
 );
 
 CREATE POLICY "Users can delete their own folders"
@@ -67,6 +70,12 @@ BEFORE INSERT OR UPDATE ON "folders"
 FOR EACH ROW
 EXECUTE FUNCTION "prevent_folder_cycle"();
 
+-- Trigger to reject a parent_id that points to another user's folder
+CREATE TRIGGER "enforce_folder_parent_owner"
+BEFORE INSERT OR UPDATE ON "folders"
+FOR EACH ROW
+EXECUTE FUNCTION "enforce_folder_parent_owner"();
+
 -- Link documents to folders (nullable: NULL folder_id means the document is at the root).
 -- Declared here rather than in 01_documents.sql because the folders table (02_)
 -- must exist before this foreign key can reference it.
@@ -75,3 +84,9 @@ ALTER TABLE "documents"
 ADD COLUMN "folder_id" UUID REFERENCES "folders" ("id") ON DELETE CASCADE;
 
 CREATE INDEX "documents_folder_id_idx" ON "documents" ("folder_id"); -- noqa: PG01
+
+-- Trigger to reject a folder_id that points to another user's folder
+CREATE TRIGGER "enforce_document_folder_owner"
+BEFORE INSERT OR UPDATE ON "documents"
+FOR EACH ROW
+EXECUTE FUNCTION "enforce_document_folder_owner"();

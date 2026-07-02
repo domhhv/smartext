@@ -63,6 +63,52 @@ BEGIN
 END;
 $$;
 
+-- Ownership guard: a folder's parent_id must reference a folder owned by the same user
+CREATE OR REPLACE FUNCTION "public"."enforce_folder_parent_owner"() RETURNS "trigger" --noqa
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    "parent_owner" TEXT;
+BEGIN
+    IF NEW.parent_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    SELECT "user_id" INTO "parent_owner"
+    FROM "public"."folders"
+    WHERE "id" = NEW.parent_id;
+
+    IF "parent_owner" IS NULL OR "parent_owner" IS DISTINCT FROM NEW.user_id THEN
+        RAISE EXCEPTION 'parent folder must belong to the same user';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+-- Ownership guard: a document's folder_id must reference a folder owned by the same user
+CREATE OR REPLACE FUNCTION "public"."enforce_document_folder_owner"() RETURNS "trigger" --noqa
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    "folder_owner" TEXT;
+BEGIN
+    IF NEW.folder_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    SELECT "user_id" INTO "folder_owner"
+    FROM "public"."folders"
+    WHERE "id" = NEW.folder_id;
+
+    IF "folder_owner" IS NULL OR "folder_owner" IS DISTINCT FROM NEW.user_id THEN
+        RAISE EXCEPTION 'folder must belong to the same user as the document';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
 GRANT DELETE ON TABLE "public"."folders" TO "anon";
 
 GRANT INSERT ON TABLE "public"."folders" TO "anon";
@@ -124,7 +170,8 @@ ON "public"."folders"
 AS PERMISSIVE
 FOR UPDATE
 TO "authenticated"
-USING (((select("auth"."jwt"() ->> 'sub'::TEXT)) = "user_id")); -- noqa: CV10
+USING (((select("auth"."jwt"() ->> 'sub'::TEXT)) = "user_id")) -- noqa: CV10
+WITH CHECK (((select("auth"."jwt"() ->> 'sub'::TEXT)) = "user_id")); -- noqa: CV10
 
 CREATE POLICY "Users must insert their own folders"
 ON "public"."folders"
@@ -133,8 +180,26 @@ FOR INSERT
 TO "authenticated"
 WITH CHECK (((select("auth"."jwt"() ->> 'sub'::TEXT)) = "user_id")); -- noqa: CV10
 
+-- Add WITH CHECK to the existing documents UPDATE policy so a user cannot
+-- reassign a document's user_id (defense-in-depth alongside the folder-owner trigger).
+DROP POLICY "Users can update their own documents" ON "public"."documents";
+
+CREATE POLICY "Users can update their own documents"
+ON "public"."documents"
+AS PERMISSIVE
+FOR UPDATE
+TO "authenticated"
+USING (((select("auth"."jwt"() ->> 'sub'::TEXT)) = "user_id")) -- noqa: CV10
+WITH CHECK (((select("auth"."jwt"() ->> 'sub'::TEXT)) = "user_id")); -- noqa: CV10
+
 CREATE TRIGGER "set_updated_at" BEFORE UPDATE ON "public"."folders"
 FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 CREATE TRIGGER "prevent_folder_cycle" BEFORE INSERT OR UPDATE ON "public"."folders"
 FOR EACH ROW EXECUTE FUNCTION "public"."prevent_folder_cycle"();
+
+CREATE TRIGGER "enforce_folder_parent_owner" BEFORE INSERT OR UPDATE ON "public"."folders"
+FOR EACH ROW EXECUTE FUNCTION "public"."enforce_folder_parent_owner"();
+
+CREATE TRIGGER "enforce_document_folder_owner" BEFORE INSERT OR UPDATE ON "public"."documents"
+FOR EACH ROW EXECUTE FUNCTION "public"."enforce_document_folder_owner"();

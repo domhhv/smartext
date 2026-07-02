@@ -47,3 +47,51 @@ BEGIN
     RETURN NEW;
 END;
 $$;
+
+-- Function to ensure a folder's parent_id references a folder owned by the same user.
+-- Guards against cross-tenant folder trees (and the cascade-delete that would follow).
+CREATE OR REPLACE FUNCTION "public"."enforce_folder_parent_owner"() RETURNS "trigger" --noqa
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    "parent_owner" TEXT;
+BEGIN
+    IF NEW.parent_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    SELECT "user_id" INTO "parent_owner"
+    FROM "public"."folders"
+    WHERE "id" = NEW.parent_id;
+
+    IF "parent_owner" IS NULL OR "parent_owner" IS DISTINCT FROM NEW.user_id THEN
+        RAISE EXCEPTION 'parent folder must belong to the same user';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+-- Function to ensure a document's folder_id references a folder owned by the same user.
+-- Guards against attaching a document to another tenant's folder (and cross-tenant cascade deletes).
+CREATE OR REPLACE FUNCTION "public"."enforce_document_folder_owner"() RETURNS "trigger" --noqa
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    "folder_owner" TEXT;
+BEGIN
+    IF NEW.folder_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    SELECT "user_id" INTO "folder_owner"
+    FROM "public"."folders"
+    WHERE "id" = NEW.folder_id;
+
+    IF "folder_owner" IS NULL OR "folder_owner" IS DISTINCT FROM NEW.user_id THEN
+        RAISE EXCEPTION 'folder must belong to the same user as the document';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;

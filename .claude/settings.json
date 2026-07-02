@@ -19,8 +19,12 @@
       "mcp__sentry__get_sentry_resource",
       "Bash(supabase --version)",
       "Bash(supabase status *)",
-      "Bash(supabase db *)",
-      "Bash(node scripts/sqlfluff.mjs lint)"
+      "Bash(supabase db diff *)",
+      "Bash(supabase db lint *)",
+      "Bash(supabase db pull *)",
+      "Bash(supabase gen types *)",
+      "Bash(node scripts/sqlfluff.mjs lint)",
+      "Bash(gh pr *)"
     ],
     "deny": [],
     "ask": []
