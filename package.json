@@ -38,6 +38,8 @@
     "prebuild": "npm run typecheck && npm run eslint:check && npm run prettier:check",
     "build": "TURBOPACK_STATS=1 next build",
     "build:webpack": "next build --webpack",
+    "bundle:compare": "node scripts/compare-bundle.mjs",
+    "bundle:measure": "node scripts/measure-bundle.mjs",
     "db:diff": "supabase db diff",
     "db:diff:storage": "supabase db diff --schema storage",
     "db:gen-types": "supabase gen types --lang=typescript --schema public --schema auth --schema storage --local > supabase/database.types.ts && node scripts/patch-json-type.mjs && eslint --fix supabase/database.types.ts",

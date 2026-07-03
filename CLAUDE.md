@@ -101,3 +101,13 @@ The project has comprehensive linting and formatting:
 - **Component Location**: Keep shadcn primitives in `ui/`, custom components that build upon them in `ui/custom/`
 - **File Naming**: Use lowercase with hyphens for files and directories
 - **Types Inference**: Prefer inferred types over explicit annotations where possible
+
+#### Comments
+
+Never add explanatory comments unless absolutely necessary.
+
+Code must be clean, readable, and self-documenting.
+
+If a comment is necessary, use the multi-line comments (block comments) format. JSDoc and TODO comments are allowed.
+
+Never use single-line comments except for ESLint or TypeScript directives.

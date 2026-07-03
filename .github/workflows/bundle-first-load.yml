@@ -1,0 +1,75 @@
+name: First Load JS Bundle Size per route
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: 24.18.0
+
+# Cancel superseded runs on the same ref (e.g. rapid pushes to a PR).
+concurrency:
+  group: bundle-first-load-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  measure:
+    if: >-
+      github.event_name == 'push' ||
+      !contains(github.event.pull_request.body, '[skip first-load-bundle-size-ci]')
+    name: Measure and report bundle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # commit the baseline on push to main
+      pull-requests: write # post the sticky comment on PRs
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          # Full history so `git show origin/main:bundle-sizes.json` works on PRs.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (webpack) and measure First Load JS Bundle Size
+        run: |
+          npx next build --webpack
+          npm run bundle:measure
+
+      # ---- Push to main: commit the new baseline ----
+      - name: Commit baseline
+        if: github.event_name == 'push'
+        run: |
+          git add bundle-sizes.json
+          if git diff --cached --quiet -- bundle-sizes.json; then
+            echo "Baseline unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(ci): update first load js bundle size baseline [skip ci]"
+          git push
+
+      # ---- Pull request: diff against main and comment ----
+      - name: Compare against main baseline
+        if: github.event_name == 'pull_request'
+        run: |
+          git show origin/main:bundle-sizes.json > base-sizes.json 2>/dev/null || echo "" > base-sizes.json
+          npm run bundle:compare -- base-sizes.json bundle-sizes.json > bundle-report.md
+          cat bundle-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post sticky PR comment
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2.9.4
+        with:
+          header: first-load-js
+          path: bundle-report.md

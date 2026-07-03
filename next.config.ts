@@ -23,6 +23,15 @@ const nextConfig: NextConfig = {
           },
         })
       );
+      config.plugins.push(
+        new StatsWriterPlugin({
+          filename: '../.next/analyze/entrypoints.json',
+          stats: {
+            all: false,
+            entrypoints: true,
+          },
+        })
+      );
     }
 
     return config;
