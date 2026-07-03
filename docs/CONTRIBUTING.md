@@ -15,39 +15,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 ### Development Setup
 
-1. Fork and clone the repository
-
-   ```bash
-   git clone https://github.com/domhhv/smartext.git
-   cd smartext
-   ```
-
-2. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment**
-
-   ```bash
-   cp .env.example .env.local
-   # Fill in required environment variables in .env.local
-   ```
-
-4. **Boot local Supabase instance**
-
-   [Install Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started?queryGroups=platform&platform=macos), open Docker Desktop, and run:
-
-   ```bash
-   supabase start
-   ```
-
-5. Start the development server
-
-   ```bash
-   npm run dev
-   ```
+Follow the [Getting Started](../README.md#getting-started) section instructions in the main README to set up and run the project locally.
 
 ## Development Workflow
 
@@ -100,6 +68,7 @@ All code must pass quality checks before merging:
 npm run typecheck      # TypeScript type checking
 npm run eslint:check   # Linting
 npm run prettier:check # Code formatting
+npm run lint:sql       # SQL linting
 ```
 
 Pre-commit hooks will automatically run these checks via Husky and lint-staged.
@@ -109,6 +78,7 @@ Auto-fix issues:
 ```bash
 npm run eslint:fix     # Fix linting issues
 npm run prettier:write # Format code
+npm run fix:sql        # Fix SQL linting issues
 ```
 
 ## Code Style Guidelines
