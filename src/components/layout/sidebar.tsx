@@ -78,10 +78,6 @@ export default function Sidebar({ documents, isAuthenticated, isDocumentsError }
     };
   }, [closeSidebar, isExpanded, isMobile, documentIdInteractedWith]);
 
-  if (['login', 'register'].includes(segment || '')) {
-    return null;
-  }
-
   return (
     <>
       {isMobile && isExpanded && <div className="bg-background/80 fixed inset-0 z-40 backdrop-blur-xs" />}
@@ -89,11 +85,14 @@ export default function Sidebar({ documents, isAuthenticated, isDocumentsError }
       <aside
         id="sidebar"
         className={cn(
-          'border-border bg-background sticky top-0 flex h-full flex-col border-r transition-all duration-30',
+          'border-border bg-background sticky top-0 flex h-full flex-col max-md:border-r',
           !isAuthenticated && 'justify-between',
           isMobile
-            ? cn('fixed top-0 left-0 z-50 h-full w-64', isExpanded ? 'translate-x-0' : '-translate-x-full')
-            : cn(isExpanded ? 'w-64' : 'w-12')
+            ? cn(
+                'fixed top-0 left-0 z-50 h-full w-64 transition-transform duration-30',
+                isExpanded ? 'translate-x-0' : '-translate-x-full'
+              )
+            : 'w-full min-w-0 overflow-hidden'
         )}
       >
         <div>
@@ -133,7 +132,7 @@ export default function Sidebar({ documents, isAuthenticated, isDocumentsError }
                     </TooltipContent>
                   </Tooltip>
                   <div className="flex items-center gap-2">
-                    <div className="text-muted-foreground flex flex-col gap-0.5 text-[9px]">
+                    <div className="text-muted-foreground flex flex-col gap-0.5 text-[9px] group-[.sidebar-author-badge-hidden]/sidebar:hidden">
                       <span className="text-right text-slate-500">
                         Built by{' '}
                         <Link
