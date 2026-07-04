@@ -11,6 +11,7 @@
       "mcp__chrome-devtools__take_snapshot",
       "mcp__chrome-devtools__take_screenshot",
       "mcp__chrome-devtools__evaluate_script",
+      "mcp__chrome-devtools__resize_page",
       "mcp__context7__query-docs",
       "mcp__sentry__whoami",
       "mcp__sentry__find_organizations",
@@ -25,7 +26,6 @@
       "Bash(supabase gen types *)",
       "Bash(node scripts/sqlfluff.mjs lint)",
       "Bash(gh pr *)"
-      "mcp__chrome-devtools__resize_page"
     ],
     "deny": [],
     "ask": []
