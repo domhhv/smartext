@@ -10,8 +10,10 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { ThemeProvider } from 'next-themes';
 import { Ubuntu, Montserrat } from 'next/font/google';
+import { cookies } from 'next/headers';
 import * as React from 'react';
 
+import AppShell from '@/components/layout/app-shell';
 import DevelopmentBanner from '@/components/layout/development-banner';
 import Sidebar from '@/components/layout/sidebar';
 import ConfirmProvider from '@/components/providers/confirm-provider';
@@ -19,6 +21,7 @@ import DocumentProvider from '@/components/providers/document-provider';
 import LexicalExtensionComposerProvider from '@/components/providers/lexical-extension-composer-provider';
 import SidebarProvider from '@/components/providers/sidebar-provider';
 import Toaster from '@/components/ui/sonner';
+import LAYOUT_PANELS from '@/lib/constants/layout-panels';
 import createClerkSupabaseSsrClient from '@/lib/utils/create-clerk-supabase-ssr-client';
 
 export const viewport: Viewport = {
@@ -119,16 +122,25 @@ export default function RootLayout({ children }: Readonly<React.PropsWithChildre
 async function DocumentsProvider({ children }: Readonly<React.PropsWithChildren>) {
   const { isAuthenticated, userId } = await getAuthState();
   const { documents, error } = await getDocuments(userId);
+  const cookieStore = await cookies();
+  const isSidebarCollapsed = cookieStore.get('sidebar-collapsed')?.value === 'true';
+  const storedSidebarWidth = Number(cookieStore.get('sidebar-width')?.value);
+  const initialSidebarWidth = Number.isFinite(storedSidebarWidth)
+    ? Math.min(Math.max(storedSidebarWidth, LAYOUT_PANELS.SIDEBAR_MIN_WIDTH), LAYOUT_PANELS.SIDEBAR_MAX_WIDTH_PX)
+    : LAYOUT_PANELS.SIDEBAR_DEFAULT_WIDTH;
 
   return (
     <DocumentProvider documents={documents} isAuthenticated={isAuthenticated}>
-      <SidebarProvider>
+      <SidebarProvider defaultIsExpanded={!isSidebarCollapsed}>
         <div className="bg-background relative flex h-full flex-col overflow-hidden">
           <DevelopmentBanner />
-          <div className="relative flex min-h-0 flex-1 overflow-hidden">
-            <Sidebar documents={documents} isDocumentsError={!!error} isAuthenticated={isAuthenticated} />
-            <main className="min-w-0 flex-1 overflow-hidden">{children}</main>
-          </div>
+          <AppShell
+            initialSidebarWidth={initialSidebarWidth}
+            isSidebarInitiallyCollapsed={isSidebarCollapsed}
+            sidebar={<Sidebar documents={documents} isDocumentsError={!!error} isAuthenticated={isAuthenticated} />}
+          >
+            {children}
+          </AppShell>
           <Analytics />
           <SpeedInsights />
           <Toaster richColors closeButton duration={10_000} />

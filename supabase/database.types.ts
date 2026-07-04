@@ -1,4 +1,11 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+/**
+ * NOTE: This Json type is patched by scripts/patch-json-type.mjs after every
+ * `npm run db:gen-types`. Supabase generates a self-referential Json type whose deep
+ * recursion makes camelcase-keys' type inference blow the TS instantiation depth
+ * limit (TS2589). The non-recursive form below avoids that; call sites narrow
+ * JSON columns to their concrete shapes anyway.
+ */
+export type Json = string | number | boolean | null | { [key: string]: unknown } | unknown[];
 
 export type Database = {
   auth: {

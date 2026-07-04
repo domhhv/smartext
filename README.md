@@ -2,26 +2,27 @@
 
 ![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/domhhv/smartext?utm_source=oss&utm_medium=github&utm_campaign=domhhv%2Fsmartext&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 
-**An AI-powered rich text editor that transforms how you write and edit content.**
+## A delightful text editor for your richest content.
 
-Smartext merges a high-quality rich text editor with OpenAI's GPT and Anthropic's Claude models to offer intelligent writing help. Unlike standard AI writing tools that produce full documents, this app emphasizes clear, contextual editing within your current content.
+**Write with confidence and style with precision, whether you're working on academic papers, technical documents, or creative writing.**
 
-**[Try it live at smartext.app](https://smartext.app)**
+Smartext offers a rich text editor with optional AI-powered assistance to help you edit, format, and enhance your content at exact locations.
 
 ## Features
+
+### Professional Writing Experience
+
+- **Rich Text Editor**: Full-featured editor with Markdown support: formatting, headings, tables, lists, and more.
+- **Advanced Styling Controls**: Go beyond Markdown with font sizes, font families, text and highlight colors, alignment, indentation, and more.
+- **Split-pane Interface**: Work with your document and the AI assistant side-by-side.
+- **Dark/Light Themes**: Comfortable writing in any setting.
+- **Distraction-free**: Clean, modern interface that keeps you focused on your content.
 
 ### Intelligent Content Editing
 
 - **Contextual AI Commands**: Ask the AI to edit specific paragraphs, add content at exact positions, or format selections.
 - **Real-time Collaboration**: Chat with AI while maintaining full control over your document.
 - **Tool-based Precision**: AI uses structured commands to make specific changes instead of redoing everything.
-
-### Professional Writing Experience
-
-- **Rich Text Editor**: Full-featured editor with markdown support, tables, lists, and formatting.
-- **Split-pane Interface**: Work with your document and the AI assistant side-by-side.
-- **Dark/Light Themes**: Comfortable writing in any setting.
-- **Distraction-free**: Clean, modern interface that keeps you focused on your content.
 
 ### Developer-friendly Architecture
 
@@ -57,7 +58,7 @@ Smartext takes a different approach:
 
 ### Enhanced AI Capabilities
 
-- **Multi-model Support**: Integration with Claude, Gemini, and other leading AI models.
+- **Multimodel Support**: Integration with Claude, Gemini, and other leading AI models.
 - **Specialized Writing Modes**: Academic writing, technical documentation, and creative writing assistance.
 - **Research Integration**: AI that can fact-check, add citations, and retrieve relevant information.
 - **Style Consistency**: AI that learns and maintains your writing style across documents.
@@ -85,13 +86,12 @@ Smartext takes a different approach:
 - **Analytics**: Insights into writing productivity and AI support effectiveness.
 - **Custom Models**: Tailored AI models for specific industries or use cases.
 
-## Quick Start
+## Getting Started
 
 ### Prerequisites
 
 - Node.js 24.18.0 or higher
 - npm 11.16.0 or higher
-- Supabase CLI
 - Docker for running local Supabase instance
 - Clerk development keys for local authentication
 
@@ -114,24 +114,77 @@ Smartext takes a different approach:
 
    ```bash
    cp .env.example .env.local
-   # Fill in required environment variables in .env.local
+   # ENCRYPTION_SECRET can be used as is or generated with: openssl rand -hex 32
    ```
 
-4. **Boot local Supabase instance**
+4. **Set up Clerk**
 
-   [Install Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started?queryGroups=platform&platform=macos), open Docker Desktop, and run:
+   - Create a Clerk account and set up a new application, then get your [API keys](https://dashboard.clerk.com/~/api-keys)
+   - Get your development [API keys](https://dashboard.clerk.com/~/api-keys) and [domain](https://dashboard.clerk.com/~/domains).
+   - Fill in the required Clerk environment variables in `.env.local`.
+
+### Local Database Setup
+
+The project uses Supabase for database operations.
+
+The Supabase project configuration, seeds, and migrations live under the `supabase` directory.
+
+To set up a local Supabase instance, run the following commands (Docker required).
+
+1. **Start the local Supabase instance:**
 
    ```bash
-   supabase start
+   npm run db:start
    ```
 
-5. **Start the development server**
+   This command starts Supabase Docker containers based on `supabase/config.toml` and creates a local Postgres database and services.
+
+   It should output the Studio URL, Database URL, and Project URL, among other info.
+
+   Use the Studio URL to access the local Supabase dashboard in the browser, and the Database URL to connect to the local database directly if needed.
+
+2. **Retrieve API URL and anon key:**
+
+   Run the following command to retrieve the API URL and anon key for the local Supabase instance:
+
+   ```bash
+   npm run db:status
+   ```
+
+   Alternatively, use the following to get variables in env format:
+
+   ```bash
+   npm run db:status -- -o env
+   ```
+
+   These commands output the environment variables needed to connect to the local Supabase instance, including `API_URL` and `PUBLISHABLE_KEY`.
+
+3. **Environment variables**
+
+   Add the following environment variables to your `.env.local` file (using the values from the step above):
+
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=<API URL>
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<PUBLISHABLE_KEY>
+   ```
+
+4. **Apply migrations and seed the database:**
+
+   ```bash
+   npm run db:reset
+   ```
+
+   This command resets the local database to a clean state, applies migrations from `supabase/migrations`, and seeds the db with essential initial data based on `supabase/seed.sql`.
+
+### Start the development server
+
+1. **Finally, run the app locally:**
 
    ```bash
    npm run dev
    ```
 
-6. **Open the application**
+2. **Open the application**
 
    Navigate to [http://localhost:3000](http://localhost:3000)
 
@@ -147,6 +200,10 @@ npm run eslint:check    # Code linting
 npm run eslint:fix      # Auto-fix linting issues
 npm run prettier:check  # Code formatting check
 npm run prettier:write  # Auto-format code
+npm run db:start        # Start local Supabase instance
+npm run db:stop         # Stop local Supabase instance
+npm run db:reset        # Reset local database
+npm run db:gen-types    # Regenerate Supabase types
 ```
 
 **Important**: Always run `npm run typecheck`, `npm run eslint:check`, and `npm run prettier:check` after making changes. These are part of the prebuild process and must pass for production builds.
@@ -181,20 +238,14 @@ Contributions are welcome! This project showcases cutting-edge AI integration pa
 ### Development Guidelines
 
 - **Code Quality**: All PRs must pass TypeScript checking, ESLint, and Prettier.
-- **Commit Messages**: Follow conventional commit format (enforced by commitlint).
+- **Commit Messages**: Follow the conventional commit format (enforced by commitlint).
 - **Testing**: Ensure changes work in both light and dark themes.
 - **Documentation**: Update relevant documentation for new features.
 
 ## License
 
-MIT License - see [LICENSE](https://github.com/domhhv/smartext/blob/main/LICENSE.md) file for details.
+MIT License – see [LICENSE](https://github.com/domhhv/smartext/blob/main/LICENSE.md) file for details.
 
 ## Issues
 
 Found a bug or have a feature request? Please [open an issue](https://github.com/domhhv/smartext/issues).
-
----
-
-**Smartext represents the future of AI-powered writing tools: intelligent, precise, and designed to enhance rather than replace human creativity.**
-
-Visit [smartext.app](https://smartext.app) to experience it yourself.

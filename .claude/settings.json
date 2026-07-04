@@ -25,6 +25,7 @@
       "Bash(supabase gen types *)",
       "Bash(node scripts/sqlfluff.mjs lint)",
       "Bash(gh pr *)"
+      "mcp__chrome-devtools__resize_page"
     ],
     "deny": [],
     "ask": []

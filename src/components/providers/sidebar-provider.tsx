@@ -9,12 +9,11 @@ type SidebarContextType = {
   isExpanded: boolean;
   isMobile: boolean;
   closeSidebar: () => void;
+  setIsExpanded: (value: boolean) => void;
   toggleSidebar: () => void;
 };
 
 const SidebarContext = React.createContext<SidebarContextType | null>(null);
-
-const STORAGE_KEY = 'sidebar-expanded';
 
 export function useSidebar() {
   const context = React.useContext(SidebarContext);
@@ -26,47 +25,34 @@ export function useSidebar() {
   return context;
 }
 
-export default function SidebarProvider({ children }: PropsWithChildren) {
-  const [isExpanded, setIsExpanded] = React.useState(true);
+type SidebarProviderProps = PropsWithChildren<{
+  defaultIsExpanded?: boolean;
+}>;
+
+export default function SidebarProvider({ children, defaultIsExpanded = true }: SidebarProviderProps) {
+  const [isExpanded, setIsExpanded] = React.useState(defaultIsExpanded);
   const isMobile = useIsMobile();
 
   React.useEffect(() => {
-    if (!isMobile) {
-      const stored = localStorage.getItem(STORAGE_KEY);
-
-      if (stored !== null) {
-        setIsExpanded(stored === 'true');
-      }
-    } else {
-      setIsExpanded(false);
-    }
-  }, [isMobile]);
+    setIsExpanded(isMobile ? false : defaultIsExpanded);
+  }, [isMobile, defaultIsExpanded]);
 
   const toggleSidebar = React.useCallback(() => {
     setIsExpanded((prev) => {
-      const next = !prev;
-
-      if (!isMobile) {
-        localStorage.setItem(STORAGE_KEY, String(next));
-      }
-
-      return next;
+      return !prev;
     });
-  }, [isMobile]);
+  }, []);
 
   const closeSidebar = React.useCallback(() => {
     setIsExpanded(false);
-
-    if (!isMobile) {
-      localStorage.setItem(STORAGE_KEY, 'false');
-    }
-  }, [isMobile]);
+  }, []);
 
   const value = React.useMemo(() => {
     return {
       closeSidebar,
       isExpanded,
       isMobile,
+      setIsExpanded,
       toggleSidebar,
     };
   }, [isExpanded, toggleSidebar, closeSidebar, isMobile]);
