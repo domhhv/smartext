@@ -38,6 +38,9 @@ FOR UPDATE
 TO "authenticated"
 USING (
     ((SELECT "auth"."jwt"() ->> 'sub') = ("user_id")::TEXT) -- noqa: CV10
+)
+WITH CHECK (
+    ((SELECT "auth"."jwt"() ->> 'sub') = ("user_id")::TEXT) -- noqa: CV10
 );
 
 CREATE POLICY "Users can delete their own documents"

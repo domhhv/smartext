@@ -11,13 +11,21 @@
       "mcp__chrome-devtools__take_snapshot",
       "mcp__chrome-devtools__take_screenshot",
       "mcp__chrome-devtools__evaluate_script",
+      "mcp__chrome-devtools__resize_page",
       "mcp__context7__query-docs",
       "mcp__sentry__whoami",
       "mcp__sentry__find_organizations",
       "mcp__sentry__find_projects",
       "mcp__sentry__search_issues",
       "mcp__sentry__get_sentry_resource",
-      "mcp__chrome-devtools__resize_page"
+      "Bash(supabase --version)",
+      "Bash(supabase status *)",
+      "Bash(supabase db diff *)",
+      "Bash(supabase db lint *)",
+      "Bash(supabase db pull *)",
+      "Bash(supabase gen types *)",
+      "Bash(node scripts/sqlfluff.mjs lint)",
+      "Bash(gh pr *)"
     ],
     "deny": [],
     "ask": []

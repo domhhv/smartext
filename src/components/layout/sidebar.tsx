@@ -85,7 +85,7 @@ export default function Sidebar({ documents, isAuthenticated, isDocumentsError }
       <aside
         id="sidebar"
         className={cn(
-          'border-border bg-background sticky top-0 flex h-full flex-col max-md:border-r',
+          'border-border bg-background sticky top-0 flex h-full flex-col transition-all duration-30 max-md:border-r',
           !isAuthenticated && 'justify-between',
           isMobile
             ? cn(
