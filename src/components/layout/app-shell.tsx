@@ -61,7 +61,6 @@ export default function AppShell({
   function handleSidebarResize(panelSize: PanelSize) {
     /* A collapsible panel snaps between collapsedSize and minSize, so no intermediate sizes occur */
     const isCollapsed = panelSize.inPixels < LAYOUT_PANELS.SIDEBAR_MIN_WIDTH;
-    console.log({ panelSize: panelSize.inPixels });
 
     if (!isCollapsed) {
       lastExpandedWidthRef.current = Math.round(panelSize.inPixels);
