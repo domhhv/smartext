@@ -48,6 +48,10 @@ type MoveDialogTarget = {
   kind: 'document' | 'folder';
 };
 
+type MoveDirectoryItemOptions = MoveDialogTarget & {
+  destinationFolderId: string;
+};
+
 type DocumentContextType = {
   activeDocument: DocumentItem | null;
   activeDropdownDocumentId: string | null;
@@ -61,11 +65,13 @@ type DocumentContextType = {
   hasUnsavedEditorChanges: boolean;
   isEditorEmpty: boolean;
   closeActiveDocument: () => void;
+  expandFolderAndAncestors: (folderId: string) => void;
   handleDropdownOpenChange: (isOpen: boolean, documentId: string) => void;
   handleEditorChange: (editorState: EditorState) => void;
   handleFolderDropdownOpenChange: (isOpen: boolean, folderId: string) => void;
   initiateDocumentRemoval: (documentId: string) => Promise<void>;
   initiateFolderRemoval: (folderId: string) => Promise<void>;
+  moveDirectoryItem: (options: MoveDirectoryItemOptions) => Promise<void>;
   openDocumentDialog: (options?: DirectoryDialogOptions) => void;
   openFolderDialog: (options?: DirectoryDialogOptions) => void;
   openMoveDialog: (target: MoveDialogTarget) => void;
@@ -629,6 +635,63 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
     [confirm, activeDocument, closeActiveDocument, folderIdInteractedWith, folders]
   );
 
+  const moveDirectoryItem = React.useCallback(
+    async ({ destinationFolderId, id, kind }: MoveDirectoryItemOptions) => {
+      const destination = folders.find((folder) => {
+        return folder.id === destinationFolderId;
+      });
+
+      if (!destination) {
+        return;
+      }
+
+      const targetLabel = kind === 'document' ? 'Document' : 'Folder';
+
+      try {
+        if (kind === 'document') {
+          const document = documents.find((item) => {
+            return item.id === id;
+          });
+
+          if (!document || document.folderId === destinationFolderId) {
+            return;
+          }
+
+          await updateDocument(id, { folderId: destinationFolderId });
+          posthog.capture('document_moved_to_folder', {
+            documentId: id,
+            folderId: destinationFolderId,
+          });
+        } else {
+          const folder = folders.find((item) => {
+            return item.id === id;
+          });
+          const excludedFolderIds = getFolderSubtreeIds(folders, id);
+
+          if (!folder || folder.parentId === destinationFolderId || excludedFolderIds.has(destinationFolderId)) {
+            return;
+          }
+
+          await updateFolder(id, { parentId: destinationFolderId });
+          posthog.capture('folder_moved_to_folder', {
+            folderId: id,
+            parentId: destinationFolderId,
+          });
+        }
+
+        expandFolderAndAncestors(destinationFolderId);
+        toast.success(`${targetLabel} moved successfully`);
+      } catch (error) {
+        Sentry.captureException(error);
+        console.error(`Error moving ${targetLabel.toLowerCase()}: `, error);
+        toast.error(`Error moving ${targetLabel.toLowerCase()}`, {
+          description: getErrorMessage(error),
+        });
+      }
+    },
+    [documents, expandFolderAndAncestors, folders]
+  );
+
   const moveDialogFolderOptions = React.useMemo(() => {
     if (!moveDialogTarget) {
       return [];
@@ -694,6 +757,7 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
       documentIdBeingRemoved,
       documentIdInteractedWith,
       expandedFolderIds,
+      expandFolderAndAncestors,
       folderIdBeingRemoved,
       folderIdInteractedWith,
       folders,
@@ -704,6 +768,7 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
       initiateDocumentRemoval,
       initiateFolderRemoval,
       isEditorEmpty,
+      moveDirectoryItem,
       openDocumentDialog,
       openFolderDialog,
       openMoveDialog,
@@ -714,12 +779,14 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
   }, [
     closeActiveDocument,
     documentIdInteractedWith,
+    expandFolderAndAncestors,
     expandedFolderIds,
     folderIdInteractedWith,
     folders,
     openDocumentDialog,
     openFolderDialog,
     openMoveDialog,
+    moveDirectoryItem,
     handleDropdownOpenChange,
     handleFolderDropdownOpenChange,
     activeDropdownDocumentId,
