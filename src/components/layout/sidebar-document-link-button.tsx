@@ -1,4 +1,11 @@
-import { TrashIcon, Settings2Icon, LoaderCircleIcon, EllipsisVerticalIcon } from 'lucide-react';
+import {
+  FileIcon,
+  TrashIcon,
+  Settings2Icon,
+  FolderInputIcon,
+  LoaderCircleIcon,
+  EllipsisVerticalIcon,
+} from 'lucide-react';
 import { useLinkStatus } from 'next/link';
 import * as React from 'react';
 
@@ -21,9 +28,11 @@ export default function SidebarDocumentLinkButton({ document }: { document: Docu
     activeDropdownDocumentId,
     documentIdBeingRemoved,
     documentIdInteractedWith,
+    folders,
     handleDropdownOpenChange,
     initiateDocumentRemoval,
     openDocumentDialog,
+    openMoveDialog,
   } = useDocument();
   const isMobile = useIsMobile();
 
@@ -43,7 +52,10 @@ export default function SidebarDocumentLinkButton({ document }: { document: Docu
           document.id === activeDocument?.id && 'bg-secondary hover:bg-secondary pointer-events-none cursor-default'
         )}
       >
-        <p className="overflow-hidden text-left text-sm font-medium text-ellipsis">{document.title || 'Untitled'}</p>
+        <FileIcon className="size-4 shrink-0" />
+        <p className="flex-1 overflow-hidden text-left text-sm font-medium text-ellipsis">
+          {document.title || 'Untitled'}
+        </p>
         {(pending || documentIdBeingRemoved === document.id) && (
           <LoaderCircleIcon className="size-4 min-w-4 animate-spin" />
         )}
@@ -79,9 +91,24 @@ export default function SidebarDocumentLinkButton({ document }: { document: Docu
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" sideOffset={16}>
-          <DropdownMenuItem className="space-x-2" onClick={openDocumentDialog}>
+          <DropdownMenuItem
+            className="space-x-2"
+            onClick={() => {
+              openDocumentDialog();
+            }}
+          >
             <Settings2Icon />
             Edit details
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="space-x-2"
+            disabled={!document.folderId && folders.length === 0}
+            onClick={() => {
+              openMoveDialog({ id: document.id, kind: 'document' });
+            }}
+          >
+            <FolderInputIcon />
+            Move to folder
           </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
