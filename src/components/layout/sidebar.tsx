@@ -7,6 +7,8 @@ import {
   MoonIcon,
   LogInIcon,
   MonitorIcon,
+  FolderPlusIcon,
+  ChevronDownIcon,
   ExternalLinkIcon,
   FilePlusCornerIcon,
   PanelLeftCloseIcon,
@@ -19,39 +21,48 @@ import posthog from 'posthog-js';
 import * as React from 'react';
 
 import GithubIcon from '@/components/icons/github';
-import SidebarDocumentLinkButton from '@/components/layout/sidebar-document-link-button';
+import SidebarDirectoryPlaceholder from '@/components/layout/sidebar-directory-placeholder';
+import SidebarDirectoryTree from '@/components/layout/sidebar-directory-tree';
 import { useDocument } from '@/components/providers/document-provider';
 import { useSidebar } from '@/components/providers/sidebar-provider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup, ButtonGroupSeparator } from '@/components/ui/button-group';
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import useIsMobile from '@/lib/hooks/use-is-mobile';
 import useTooltipGroup from '@/lib/hooks/use-tooltip-group';
 import type { DocumentItem } from '@/lib/models/document.model';
+import type { FolderItem } from '@/lib/models/folder.model';
+import buildDirectoryTree from '@/lib/utils/build-directory-tree';
 import cn from '@/lib/utils/cn';
 
 type SidebarProps = {
   documents: DocumentItem[];
+  folders: FolderItem[];
   isAuthenticated: boolean;
-  isDocumentsError: boolean;
+  isDirectoryError: boolean;
 };
 
-export default function Sidebar({ documents, isAuthenticated, isDocumentsError }: SidebarProps) {
+export default function Sidebar({ documents, folders, isAuthenticated, isDirectoryError }: SidebarProps) {
   const { isLoaded, user } = useUser();
   const isMobile = useIsMobile();
   const { closeSidebar, isExpanded, toggleSidebar } = useSidebar();
-  const {
-    activeDocument,
-    documentIdBeingRemoved,
-    documentIdInteractedWith,
-    openDocumentDialog,
-    setDocumentIdInteractedWith,
-  } = useDocument();
+  const { documentIdInteractedWith, folderIdInteractedWith, openDocumentDialog, openFolderDialog } = useDocument();
   const segment = useSelectedLayoutSegment();
   const { setTheme, theme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   const tooltipGroup = useTooltipGroup();
+  const directoryTree = React.useMemo(() => {
+    return buildDirectoryTree(folders, documents);
+  }, [folders, documents]);
+  const isDirectoryEmpty = documents.length === 0 && folders.length === 0;
 
   React.useEffect(() => {
     setMounted(true);
@@ -66,7 +77,7 @@ export default function Sidebar({ documents, isAuthenticated, isDocumentsError }
       const target = event.target as HTMLElement;
       const sidebar = document.getElementById('sidebar');
 
-      if (sidebar && !sidebar.contains(target) && !documentIdInteractedWith) {
+      if (sidebar && !sidebar.contains(target) && !documentIdInteractedWith && !folderIdInteractedWith) {
         closeSidebar();
       }
     }
@@ -76,7 +87,7 @@ export default function Sidebar({ documents, isAuthenticated, isDocumentsError }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [closeSidebar, isExpanded, isMobile, documentIdInteractedWith]);
+  }, [closeSidebar, isExpanded, isMobile, documentIdInteractedWith, folderIdInteractedWith]);
 
   return (
     <>
@@ -172,17 +183,24 @@ export default function Sidebar({ documents, isAuthenticated, isDocumentsError }
         </div>
 
         {!isAuthenticated && isExpanded && (
-          <div className="p-4">
+          <div className="flex-1 overflow-y-auto p-4">
             <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">Welcome to Smartext</h3>
             <p className="text-muted-foreground mt-2 text-sm">
               Sign in or create an account to start creating and managing your documents.
             </p>
+            <SidebarDirectoryPlaceholder description="Organize your work into documents and nested folders — here's what your directory could look like:" />
           </div>
         )}
 
         {isAuthenticated && !isExpanded && (
           <div className="mt-2 flex-1 text-center">
-            <Button size="icon" variant="ghost" onClick={openDocumentDialog}>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => {
+                openDocumentDialog();
+              }}
+            >
               <FilePlusCornerIcon />
             </Button>
           </div>
@@ -192,18 +210,41 @@ export default function Sidebar({ documents, isAuthenticated, isDocumentsError }
           <>
             <div className="p-4 pb-0">
               <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">Your documents</h3>
-              {documents.length === 0 && !isDocumentsError && (
-                <p className="text-muted-foreground mt-2 text-sm">Nothing here yet</p>
-              )}
-              {documents.length === 0 && isDocumentsError && (
+              {isDirectoryEmpty && isDirectoryError && (
                 <Alert className="mt-1" variant="destructive">
-                  <AlertDescription>Something went wrong while loading your documents</AlertDescription>
+                  <AlertDescription>Something went wrong while loading your documents and folders</AlertDescription>
                 </Alert>
               )}
               {segment === null ? (
-                <Button className="mt-3 w-full" onClick={openDocumentDialog}>
-                  New Document
-                </Button>
+                <ButtonGroup className="mt-3 w-full">
+                  <Button
+                    className="flex-1"
+                    onClick={() => {
+                      openDocumentDialog();
+                    }}
+                  >
+                    New Document
+                  </Button>
+                  <ButtonGroupSeparator />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" aria-label="More options for creating items">
+                        <ChevronDownIcon />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        className="space-x-2"
+                        onClick={() => {
+                          openFolderDialog();
+                        }}
+                      >
+                        <FolderPlusIcon />
+                        New Folder
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </ButtonGroup>
               ) : (
                 <Link href="/">
                   <Button variant="outline" className="mt-3 w-full">
@@ -213,47 +254,12 @@ export default function Sidebar({ documents, isAuthenticated, isDocumentsError }
               )}
             </div>
             <div className="flex-1 overflow-y-auto p-4 pt-0">
-              {documents.length > 0 && (
-                <ul className="mt-3 flex flex-col gap-2">
-                  {documents.map((document) => {
-                    return (
-                      <li
-                        key={document.id}
-                        className="relative flex items-center rounded-md"
-                        onMouseLeave={() => {
-                          setDocumentIdInteractedWith('');
-                        }}
-                        onMouseEnter={() => {
-                          setDocumentIdInteractedWith(document.id);
-                        }}
-                      >
-                        <Link
-                          prefetch={false}
-                          href={{ pathname: '/', query: { document: document.id } }}
-                          className={cn(
-                            'focus:ring-accent flex-1 overflow-hidden focus:ring-2 focus:ring-offset-2 has-[.pending]:cursor-wait',
-                            documentIdBeingRemoved === document.id && 'pointer-events-none cursor-wait',
-                            document.id === activeDocument?.id && 'cursor-default'
-                          )}
-                          onClick={(e) => {
-                            if (
-                              document.id === activeDocument?.id ||
-                              (e.target instanceof HTMLElement && e.target.dataset.slot === 'dropdown-menu-item')
-                            ) {
-                              return e.preventDefault();
-                            }
-
-                            if (isMobile) {
-                              toggleSidebar();
-                            }
-                          }}
-                        >
-                          <SidebarDocumentLinkButton document={document} />
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
+              {isDirectoryEmpty && !isDirectoryError ? (
+                <SidebarDirectoryPlaceholder />
+              ) : (
+                <div className="mt-3">
+                  <SidebarDirectoryTree folders={directoryTree.folders} documents={directoryTree.documents} />
+                </div>
               )}
             </div>
           </>

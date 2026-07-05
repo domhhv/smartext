@@ -62,6 +62,45 @@ async function getAuthState() {
   }
 }
 
+const getFolders = React.cache(async (userId: string | null) => {
+  if (!userId) {
+    return {
+      error: null,
+      folders: [],
+    };
+  }
+
+  try {
+    const client = await createClerkSupabaseSsrClient();
+    const { data, error } = await client
+      .from('folders')
+      .select('*')
+      .eq('user_id', userId)
+      .order('name', { ascending: true });
+
+    if (error) {
+      Sentry.captureException(error);
+
+      return {
+        error,
+        folders: [],
+      };
+    }
+
+    return {
+      error: null,
+      folders: camelcaseKeys(data || []),
+    };
+  } catch (error) {
+    Sentry.captureException(error);
+
+    return {
+      error,
+      folders: [],
+    };
+  }
+});
+
 const getDocuments = React.cache(async (userId: string | null) => {
   if (!userId) {
     return {
@@ -121,7 +160,10 @@ export default function RootLayout({ children }: Readonly<React.PropsWithChildre
 
 async function DocumentsProvider({ children }: Readonly<React.PropsWithChildren>) {
   const { isAuthenticated, userId } = await getAuthState();
-  const { documents, error } = await getDocuments(userId);
+  const [{ documents, error: documentsError }, { error: foldersError, folders }] = await Promise.all([
+    getDocuments(userId),
+    getFolders(userId),
+  ]);
   const cookieStore = await cookies();
   const isSidebarCollapsed = cookieStore.get('sidebar-collapsed')?.value === 'true';
   const storedSidebarWidth = Number(cookieStore.get('sidebar-width')?.value);
@@ -130,14 +172,21 @@ async function DocumentsProvider({ children }: Readonly<React.PropsWithChildren>
     : LAYOUT_PANELS.SIDEBAR_DEFAULT_WIDTH;
 
   return (
-    <DocumentProvider documents={documents} isAuthenticated={isAuthenticated}>
+    <DocumentProvider folders={folders} documents={documents} isAuthenticated={isAuthenticated}>
       <SidebarProvider defaultIsExpanded={!isSidebarCollapsed}>
         <div className="bg-background relative flex h-full flex-col overflow-hidden">
           <DevelopmentBanner />
           <AppShell
             initialSidebarWidth={initialSidebarWidth}
             isSidebarInitiallyCollapsed={isSidebarCollapsed}
-            sidebar={<Sidebar documents={documents} isDocumentsError={!!error} isAuthenticated={isAuthenticated} />}
+            sidebar={
+              <Sidebar
+                folders={folders}
+                documents={documents}
+                isAuthenticated={isAuthenticated}
+                isDirectoryError={!!documentsError || !!foldersError}
+              />
+            }
           >
             {children}
           </AppShell>
