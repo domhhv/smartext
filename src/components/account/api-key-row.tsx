@@ -8,8 +8,8 @@ import OpenAiIcon from '@/components/icons/openai';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Form, FormItem, FormField, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
-import HelixLoader from '@/components/ui/helix-loader';
 import { Input } from '@/components/ui/input';
+import QuantumLoader from '@/components/ui/quantum-loader';
 
 type ApiKeyRowProps = {
   isDisabled?: boolean;
@@ -183,7 +183,7 @@ function ApiKeyRow({
                 return onTestConnection(apiKeyValue);
               }}
             >
-              {isTesting && <HelixLoader size={16} color="var(--foreground)" />}
+              {isTesting && <QuantumLoader size={16} color="var(--foreground)" />}
               Test Connection
             </Button>
           )}
@@ -191,11 +191,11 @@ function ApiKeyRow({
             Cancel
           </Button>
           <Button type="button" onClick={onRemove} variant="destructive" disabled={isTesting || !isSet}>
-            {isRemoving && <HelixLoader size={16} color="var(--color-white)" />}
+            {isRemoving && <QuantumLoader size={16} color="var(--color-white)" />}
             Remove
           </Button>
           <Button type="submit" disabled={isSaving}>
-            {isSaving && <HelixLoader size={16} color="var(--primary-foreground)" />}
+            {isSaving && <QuantumLoader size={16} color="var(--primary-foreground)" />}
             Save
           </Button>
         </div>

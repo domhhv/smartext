@@ -6,18 +6,22 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 type TooltipButtonProps = {
+  'aria-label'?: string;
   children: ReactNode;
-  delayDuration: number;
+  delayDuration?: number;
   ref?: Ref<HTMLButtonElement>;
   shortcut?: readonly string[];
-  tooltip: string;
-  onClick: () => void;
-  onMouseEnter: () => void;
-} & Pick<ComponentProps<typeof Button>, 'variant' | 'size' | 'disabled'>;
+  tooltip: string | ReactNode;
+  tooltipContentProps?: ComponentProps<typeof TooltipContent>;
+  onClick?: () => void;
+  onMouseEnter?: () => void;
+} & Pick<ComponentProps<typeof Button>, 'variant' | 'size' | 'disabled' | 'className'>;
 
 export default function TooltipButton({
+  'aria-label': ariaLabel,
   children,
-  delayDuration,
+  className,
+  delayDuration = 500,
   disabled = false,
   onClick,
   onMouseEnter,
@@ -25,16 +29,25 @@ export default function TooltipButton({
   shortcut,
   size = 'icon',
   tooltip,
+  tooltipContentProps = {},
   variant = 'ghost',
 }: TooltipButtonProps) {
   return (
     <Tooltip delayDuration={delayDuration}>
       <TooltipTrigger asChild onMouseEnter={onMouseEnter}>
-        <Button ref={ref} size={size} variant={variant} onClick={onClick} disabled={disabled}>
+        <Button
+          ref={ref}
+          size={size}
+          variant={variant}
+          onClick={onClick}
+          disabled={disabled}
+          className={className}
+          {...(ariaLabel && { 'aria-label': ariaLabel })}
+        >
           {children}
         </Button>
       </TooltipTrigger>
-      <TooltipContent className="flex items-center gap-2 p-2 pr-2.5">
+      <TooltipContent className="flex items-center gap-2 p-2 pr-2.5" {...tooltipContentProps}>
         {tooltip} <Shortcut keys={shortcut} />
       </TooltipContent>
     </Tooltip>

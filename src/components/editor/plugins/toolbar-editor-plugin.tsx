@@ -97,7 +97,21 @@ import {
 } from '@/lib/utils/editor-helpers';
 import getErrorMessage from '@/lib/utils/get-error-message';
 
+const FONT_FAMILIES = [
+  'Arial',
+  'Courier New',
+  'Georgia',
+  'Times New Roman',
+  'Verdana',
+  'Ubuntu',
+  'Montserrat',
+  'Roboto',
+  'Open Sans',
+  'Lora',
+] as const;
+
 export default function ToolbarEditorPlugin() {
+  const [mounted, setMounted] = React.useState(false);
   const { isSignedIn } = useUser();
   const [editor] = useLexicalComposerContext();
   const { toolbarState } = React.use(ToolbarStateContext);
@@ -115,6 +129,10 @@ export default function ToolbarEditorPlugin() {
   const [backgroundColor, setBackgroundColor] = React.useState('');
   const [isSavingActiveDocument, setIsSavingActiveDocument] = React.useState(false);
   useEditorToolbarSync();
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const foreground = useCssVar('--foreground');
   const background = useCssVar('--background');
@@ -315,8 +333,8 @@ export default function ToolbarEditorPlugin() {
         toast.success('Document saved successfully');
       } catch (error) {
         Sentry.captureException(error);
-        console.error(`Error ${activeDocument.title || 'Untitled'} document: `, error);
-        toast.error(`Error ${activeDocument.title || 'Untitled'} document`, {
+        console.error(`Error ${activeDocument.title || 'Untitled Document'} document: `, error);
+        toast.error(`Error ${activeDocument.title || 'Untitled Document'} document`, {
           description: getErrorMessage(error),
         });
       } finally {
@@ -336,7 +354,7 @@ export default function ToolbarEditorPlugin() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${activeDocument?.title || 'Untitled'}.md`;
+      link.download = `${activeDocument?.title || 'Untitled Document'}.md`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -396,7 +414,7 @@ export default function ToolbarEditorPlugin() {
           <MessageSquareIcon />
         </TooltipButton>
 
-        <Separator orientation="vertical" className="h-6! flex-shrink-0 self-center justify-self-center" />
+        <Separator orientation="vertical" className="h-6! shrink-0 self-center justify-self-center" />
 
         {!!activeDocument && (
           <TooltipButton
@@ -410,24 +428,20 @@ export default function ToolbarEditorPlugin() {
           </TooltipButton>
         )}
 
-        {isSignedIn && (
-          <>
-            <TooltipButton
-              {...tooltipGroup.getTooltipProps()}
-              variant="secondary"
-              onClick={handleSave}
-              disabled={isSavingActiveDocument || !hasUnsavedEditorChanges}
-              tooltip={
-                activeDocument
-                  ? `Save changes to ${activeDocument.title || 'Untitled'}`
-                  : 'Save this content as a new document'
-              }
-            >
-              {isSavingActiveDocument ? <LoaderCircleIcon className="animate-spin" /> : <SaveIcon />}
-            </TooltipButton>
-            <Separator orientation="vertical" className="h-6! flex-shrink-0 self-center justify-self-center" />
-          </>
-        )}
+        <TooltipButton
+          {...tooltipGroup.getTooltipProps()}
+          variant="secondary"
+          onClick={handleSave}
+          disabled={isSavingActiveDocument || !hasUnsavedEditorChanges || !isSignedIn}
+          tooltip={
+            activeDocument
+              ? `Save changes to ${activeDocument.title || 'Untitled Document'}`
+              : 'Save this content as a new document'
+          }
+        >
+          {isSavingActiveDocument ? <LoaderCircleIcon className="animate-spin" /> : <SaveIcon />}
+        </TooltipButton>
+        <Separator orientation="vertical" className="h-6! shrink-0 self-center justify-self-center" />
         <TooltipButton
           {...tooltipGroup.getTooltipProps()}
           variant="secondary"
@@ -438,7 +452,7 @@ export default function ToolbarEditorPlugin() {
         >
           <BrushCleaningIcon />
         </TooltipButton>
-        <Separator orientation="vertical" className="h-6! flex-shrink-0 self-center justify-self-center" />
+        <Separator orientation="vertical" className="h-6! shrink-0 self-center justify-self-center" />
 
         <ButtonGroup>
           <TooltipButton
@@ -467,7 +481,7 @@ export default function ToolbarEditorPlugin() {
           </TooltipButton>
         </ButtonGroup>
 
-        <Separator orientation="vertical" className="h-6! flex-shrink-0 self-center justify-self-center" />
+        <Separator orientation="vertical" className="h-6! shrink-0 self-center justify-self-center" />
 
         <ButtonGroup>
           <TooltipButton
@@ -542,26 +556,47 @@ export default function ToolbarEditorPlugin() {
 
         <Separator className="h-6!" orientation="vertical" />
 
-        <Select value={toolbarState.fontFamily} onValueChange={applyFontFamily}>
-          <SelectTrigger size="sm" variant="secondary" className="text-secondary-foreground w-40 flex-shrink-0">
-            <SelectValue placeholder="Font family" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Arial">Arial</SelectItem>
-            <SelectItem value="Courier New">Courier New</SelectItem>
-            <SelectItem value="Georgia">Georgia</SelectItem>
-            <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-            <SelectItem value="Verdana">Verdana</SelectItem>
-            <SelectItem value="Ubuntu">Ubuntu</SelectItem>
-            <SelectItem value="Montserrat">Montserrat</SelectItem>
-            <SelectItem value="Roboto">Roboto</SelectItem>
-            <SelectItem value="Open Sans">Open Sans</SelectItem>
-            <SelectItem value="Lora">Lora</SelectItem>
-          </SelectContent>
-        </Select>
+        {mounted ? (
+          <Select onValueChange={applyFontFamily} value={toolbarState.fontFamily || 'Arial'}>
+            <SelectTrigger size="sm" variant="secondary" className="text-secondary-foreground w-40 shrink-0">
+              <SelectValue placeholder="Font family" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Arial">Arial</SelectItem>
+              <SelectItem value="Courier New">Courier New</SelectItem>
+              <SelectItem value="Georgia">Georgia</SelectItem>
+              <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+              <SelectItem value="Verdana">Verdana</SelectItem>
+              <SelectItem value="Ubuntu">Ubuntu</SelectItem>
+              <SelectItem value="Montserrat">Montserrat</SelectItem>
+              <SelectItem value="Roboto">Roboto</SelectItem>
+              <SelectItem value="Open Sans">Open Sans</SelectItem>
+              <SelectItem value="Lora">Lora</SelectItem>
+            </SelectContent>
+          </Select>
+        ) : (
+          <div className="relative w-40 shrink-0">
+            <select
+              value={toolbarState.fontFamily || 'Arial'}
+              onChange={(event) => {
+                applyFontFamily(event.target.value);
+              }}
+              className="bg-secondary text-secondary-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex h-8 w-full appearance-none items-center rounded-md px-3 py-1 pr-8 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
+            >
+              {FONT_FAMILIES.map((fontFamily) => {
+                return (
+                  <option key={fontFamily} value={fontFamily}>
+                    {fontFamily}
+                  </option>
+                );
+              })}
+            </select>
+            <ChevronDownIcon className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 opacity-50" />
+          </div>
+        )}
 
         <FontSizeInput
-          className="flex-shrink-0"
+          className="shrink-0"
           value={toolbarState.fontSize}
           onChange={handleFontSizeChange}
           onMouseEnter={tooltipGroup.getTooltipProps().onMouseEnter}
@@ -571,7 +606,7 @@ export default function ToolbarEditorPlugin() {
         <DropdownMenu open={isHeadingsDropdownOpen} onOpenChange={setIsHeadingsDropdownOpen}>
           <DropdownMenuTrigger
             asChild
-            className="w-40 flex-shrink-0 justify-between"
+            className="w-40 shrink-0 justify-between"
             onPointerDown={(e) => {
               return e.preventDefault();
             }}
@@ -626,7 +661,7 @@ export default function ToolbarEditorPlugin() {
         <DropdownMenu open={isListsDropdownOpen} onOpenChange={setIsListsDropdownOpen}>
           <DropdownMenuTrigger
             asChild
-            className="w-44 flex-shrink-0 justify-between"
+            className="w-44 shrink-0 justify-between"
             onPointerDown={(e) => {
               return e.preventDefault();
             }}
@@ -671,11 +706,11 @@ export default function ToolbarEditorPlugin() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Separator orientation="vertical" className="h-6! flex-shrink-0 self-center justify-self-center" />
+        <Separator orientation="vertical" className="h-6! shrink-0 self-center justify-self-center" />
 
         <Popover open={isFontColorPickerOpen} onOpenChange={handleFontColorOpenChange}>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="secondary" className="flex-shrink-0 gap-0 space-x-2">
+            <Button size="sm" variant="secondary" className="shrink-0 gap-0 space-x-2">
               <div
                 className="flex size-4 items-center justify-center rounded-md"
                 style={{
@@ -726,7 +761,7 @@ export default function ToolbarEditorPlugin() {
 
         <Popover open={isBackgroundColorPickerOpen} onOpenChange={handleBackgroundColorOpenChange}>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="secondary" className="flex-shrink-0 gap-0 space-x-2">
+            <Button size="sm" variant="secondary" className="shrink-0 gap-0 space-x-2">
               <div
                 className="flex size-4 items-center justify-center rounded-md"
                 style={{
@@ -775,7 +810,7 @@ export default function ToolbarEditorPlugin() {
           </PopoverContent>
         </Popover>
 
-        <Separator orientation="vertical" className="h-6! flex-shrink-0 self-center justify-self-center" />
+        <Separator orientation="vertical" className="h-6! shrink-0 self-center justify-self-center" />
 
         <ButtonGroup>
           {(Object.keys(ELEMENT_FORMAT_OPTIONS) as Alignment[]).map((alignment) => {
@@ -798,7 +833,7 @@ export default function ToolbarEditorPlugin() {
           })}
         </ButtonGroup>
 
-        <Separator orientation="vertical" className="h-6! flex-shrink-0 self-center justify-self-center" />
+        <Separator orientation="vertical" className="h-6! shrink-0 self-center justify-self-center" />
 
         <ButtonGroup>
           <TooltipButton
@@ -825,7 +860,7 @@ export default function ToolbarEditorPlugin() {
           </TooltipButton>
         </ButtonGroup>
 
-        <Separator orientation="vertical" className="h-6! flex-shrink-0 self-center justify-self-center" />
+        <Separator orientation="vertical" className="h-6! shrink-0 self-center justify-self-center" />
 
         <TooltipButton
           {...tooltipGroup.getTooltipProps()}
@@ -842,7 +877,7 @@ export default function ToolbarEditorPlugin() {
         <DropdownMenu open={isTextFormatDropdownOpen} onOpenChange={setIsTextFormatDropdownOpen}>
           <DropdownMenuTrigger
             asChild
-            className="w-44 flex-shrink-0 justify-between"
+            className="w-44 shrink-0 justify-between"
             onPointerDown={(e) => {
               return e.preventDefault();
             }}
@@ -897,7 +932,7 @@ export default function ToolbarEditorPlugin() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Separator orientation="vertical" className="h-6! flex-shrink-0 self-center justify-self-center" />
+        <Separator orientation="vertical" className="h-6! shrink-0 self-center justify-self-center" />
 
         <input
           type="file"

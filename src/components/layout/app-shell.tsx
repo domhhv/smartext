@@ -9,7 +9,6 @@ import { useSidebar } from '@/components/providers/sidebar-provider';
 import { ResizablePanel, ResizableHandle, ResizablePanelGroup } from '@/components/ui/resizable';
 import LAYOUT_PANELS from '@/lib/constants/layout-panels';
 import useIsMobile from '@/lib/hooks/use-is-mobile';
-import cn from '@/lib/utils/cn';
 import setCookie from '@/lib/utils/set-cookie';
 
 type AppShellProps = React.PropsWithChildren<{
@@ -29,7 +28,6 @@ export default function AppShell({
   const { isExpanded, setIsExpanded } = useSidebar();
   const panelRef = usePanelRef();
   const lastExpandedWidthRef = React.useRef(initialSidebarWidth);
-  const [isAuthorBadgeHidden, setIsAuthorBadgeHidden] = React.useState(false);
 
   React.useEffect(() => {
     const panel = panelRef.current;
@@ -66,8 +64,6 @@ export default function AppShell({
       lastExpandedWidthRef.current = Math.round(panelSize.inPixels);
     }
 
-    setIsAuthorBadgeHidden(panelSize.inPixels < LAYOUT_PANELS.SIDEBAR_AUTHOR_BADGE_VISIBLE_WIDTH);
-
     setIsExpanded(!isCollapsed);
   }
 
@@ -92,11 +88,11 @@ export default function AppShell({
         collapsible
         id="sidebar-panel"
         panelRef={panelRef}
+        className="min-w-0"
         onResize={handleSidebarResize}
         maxSize={LAYOUT_PANELS.SIDEBAR_MAX_WIDTH}
         minSize={`${LAYOUT_PANELS.SIDEBAR_MIN_WIDTH}px`}
         collapsedSize={`${LAYOUT_PANELS.SIDEBAR_COLLAPSED_WIDTH}px`}
-        className={cn('min-w-0', isAuthorBadgeHidden && 'group/sidebar sidebar-author-badge-hidden')}
         defaultSize={
           isSidebarInitiallyCollapsed ? `${LAYOUT_PANELS.SIDEBAR_COLLAPSED_WIDTH}px` : `${initialSidebarWidth}px`
         }

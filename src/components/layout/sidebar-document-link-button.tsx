@@ -54,7 +54,7 @@ export default function SidebarDocumentLinkButton({ document }: { document: Docu
       >
         <FileIcon className="size-4 shrink-0" />
         <p className="flex-1 overflow-hidden text-left text-sm font-medium text-ellipsis">
-          {document.title || 'Untitled'}
+          {document.title || 'Untitled Document'}
         </p>
         {(pending || documentIdBeingRemoved === document.id) && (
           <LoaderCircleIcon className="size-4 min-w-4 animate-spin" />

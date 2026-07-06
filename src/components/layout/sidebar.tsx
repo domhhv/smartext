@@ -2,8 +2,8 @@
 
 import { Show, useUser, UserButton, SignInButton, SignUpButton } from '@clerk/nextjs';
 import {
-  KeyIcon,
   SunIcon,
+  KeyIcon,
   MoonIcon,
   LogInIcon,
   MonitorIcon,
@@ -20,6 +20,7 @@ import { useSelectedLayoutSegment } from 'next/navigation';
 import posthog from 'posthog-js';
 import * as React from 'react';
 
+import TooltipButton from '@/components/custom/tooltip-button';
 import GithubIcon from '@/components/icons/github';
 import SidebarDirectoryPlaceholder from '@/components/layout/sidebar-directory-placeholder';
 import SidebarDirectoryTree from '@/components/layout/sidebar-directory-tree';
@@ -35,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import useIsMobile from '@/lib/hooks/use-is-mobile';
 import useTooltipGroup from '@/lib/hooks/use-tooltip-group';
 import type { DocumentItem } from '@/lib/models/document.model';
@@ -111,17 +112,35 @@ export default function Sidebar({ documents, folders, isAuthenticated, isDirecto
             onMouseLeave={tooltipGroup.onGroupMouseLeave}
             className="border-border flex items-center border-b px-1.5 py-2 transition-all"
           >
-            <Button size="icon" variant="ghost" onClick={toggleSidebar} className="flex-shrink-0">
-              {isExpanded ? <PanelLeftCloseIcon /> : <PanelRightCloseIcon />}
-            </Button>
-            {mounted && isExpanded && (
-              <TooltipProvider>
-                <div className="flex basis-full items-center justify-between gap-2 px-1">
-                  <Tooltip delayDuration={tooltipGroup.getTooltipProps().delayDuration}>
-                    <TooltipTrigger asChild onMouseEnter={tooltipGroup.getTooltipProps().onMouseEnter}>
-                      <Button
+            <TooltipProvider>
+              <TooltipButton
+                size="icon"
+                variant="ghost"
+                className="shrink-0"
+                onClick={toggleSidebar}
+                {...tooltipGroup.getTooltipProps()}
+                aria-label="Toggle sidebar"
+                tooltip={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
+                tooltipContentProps={{
+                  align: 'start',
+                }}
+              >
+                {isExpanded ? <PanelLeftCloseIcon /> : <PanelRightCloseIcon />}
+              </TooltipButton>
+              {isExpanded && (
+                <>
+                  <div
+                    className={cn('flex basis-full items-center justify-end gap-2 px-1', mounted && 'justify-between')}
+                  >
+                    {mounted && (
+                      <TooltipButton
                         size="icon"
                         variant="ghost"
+                        aria-label="Toggle theme mode"
+                        tooltipContentProps={{
+                          align: 'start',
+                        }}
+                        {...tooltipGroup.getTooltipProps()}
                         onClick={() => {
                           const nextTheme = theme === 'light' ? 'system' : theme === 'system' ? 'dark' : 'light';
                           posthog.capture('clicked_on_theme_mode', {
@@ -129,56 +148,62 @@ export default function Sidebar({ documents, folders, isAuthenticated, isDirecto
                           });
                           setTheme(nextTheme);
                         }}
+                        tooltip={
+                          <div className="flex flex-col gap-1">
+                            <p className="text-sm">Toggle theme mode</p>
+                            <span className="text-tiny">
+                              Current setting: <strong>{theme || 'system'}</strong>
+                            </span>
+                          </div>
+                        }
                       >
                         {theme === 'light' && <SunIcon className="size-3.5" />}
                         {theme === 'system' && <MonitorIcon className="size-3.5" />}
                         {theme === 'dark' && <MoonIcon className="size-3.5" />}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent align="start">
-                      <p className="text-sm">Toggle theme mode</p>
-                      <span className="text-tiny">
-                        Current setting: <strong>{theme || 'system'}</strong>
-                      </span>
-                    </TooltipContent>
-                  </Tooltip>
-                  <div className="flex items-center gap-2">
-                    <div className="text-muted-foreground flex flex-col gap-0.5 text-[9px] group-[.sidebar-author-badge-hidden]/sidebar:hidden">
-                      <span className="text-right text-slate-500">
-                        Built by{' '}
-                        <Link
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          href="https://www.linkedin.com/in/domhhv"
-                          className="text-muted-foreground hover:text-accent-foreground text-[9px] font-medium"
+                      </TooltipButton>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <div className="text-muted-foreground flex flex-col gap-0.5 text-[9px]">
+                        <span className="text-right text-slate-500">
+                          Built by{' '}
+                          <Link
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href="https://www.linkedin.com/in/domhhv"
+                            className="text-muted-foreground hover:text-accent-foreground text-[9px] font-medium"
+                          >
+                            Dom H.
+                          </Link>
+                        </span>
+                        <span className="rounded-full bg-slate-300 px-1 py-px text-[8px] font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-400">
+                          <span className="mr-1 inline-block size-1 rounded-full bg-slate-500 align-middle" />
+                          Available for hire
+                        </span>
+                      </div>
+                      <Link target="_blank" rel="noopener noreferrer" href="https://github.com/domhhv/smartext">
+                        <TooltipButton
+                          size="xs"
+                          variant="outline"
+                          className="h-8 w-8"
+                          {...tooltipGroup.getTooltipProps()}
+                          tooltipContentProps={{
+                            align: 'start',
+                          }}
+                          tooltip={
+                            <div className="flex items-center gap-1">
+                              <ExternalLinkIcon className="size-3" />
+                              <span>View source code on GitHub</span>
+                            </div>
+                          }
                         >
-                          Dom H.
-                        </Link>
-                      </span>
-                      <span className="rounded-full bg-slate-300 px-1 py-0.25 text-[8px] font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-400">
-                        <span className="mr-1 inline-block size-1 rounded-full bg-slate-500 align-middle" />
-                        Available for hire
-                      </span>
+                          <GithubIcon className="fill-muted-foreground size-4!" />
+                        </TooltipButton>
+                      </Link>
                     </div>
-                    <Tooltip delayDuration={tooltipGroup.getTooltipProps().delayDuration}>
-                      <TooltipTrigger asChild onMouseEnter={tooltipGroup.getTooltipProps().onMouseEnter}>
-                        <Link target="_blank" rel="noopener noreferrer" href="https://github.com/domhhv/smartext">
-                          <Button size="xs" variant="outline" className="h-8 w-8">
-                            <GithubIcon className="fill-muted-foreground size-4!" />
-                          </Button>
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <div className="flex items-center gap-1">
-                          <ExternalLinkIcon className="size-3" />
-                          <span>View source code on GitHub</span>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
                   </div>
-                </div>
-              </TooltipProvider>
-            )}
+                </>
+              )}
+            </TooltipProvider>
           </div>
         </div>
 
@@ -197,6 +222,17 @@ export default function Sidebar({ documents, folders, isAuthenticated, isDirecto
             <Button
               size="icon"
               variant="ghost"
+              aria-label="New folder"
+              onClick={() => {
+                openFolderDialog();
+              }}
+            >
+              <FolderPlusIcon />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="New document"
               onClick={() => {
                 openDocumentDialog();
               }}
@@ -209,7 +245,7 @@ export default function Sidebar({ documents, folders, isAuthenticated, isDirecto
         {isAuthenticated && isExpanded && (
           <>
             <div className="p-4 pb-0">
-              <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">Your documents</h3>
+              <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">Your directory</h3>
               {isDirectoryEmpty && isDirectoryError && (
                 <Alert className="mt-1" variant="destructive">
                   <AlertDescription>Something went wrong while loading your documents and folders</AlertDescription>
@@ -280,7 +316,7 @@ export default function Sidebar({ documents, folders, isAuthenticated, isDirecto
                 </>
               ) : (
                 <SignInButton mode="modal">
-                  <Button size="icon" variant="ghost" className="mx-auto mb-1">
+                  <Button size="icon" variant="ghost" aria-label="Log in" className="mx-auto mb-1">
                     <LogInIcon className="size-4" />
                   </Button>
                 </SignInButton>
