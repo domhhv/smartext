@@ -4,39 +4,61 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { Edit3, Columns2, MessageSquare } from 'lucide-react';
 import posthog from 'posthog-js';
 import * as React from 'react';
+import type { Layout } from 'react-resizable-panels';
 import { useSwipeable } from 'react-swipeable';
 
 import { ChatStatusContext } from '@/components/providers/chat-status-provider';
 import { MobileLayoutContext } from '@/components/providers/mobile-layout-provider';
 import { Button } from '@/components/ui/button';
-import HelixLoader from '@/components/ui/helix-loader';
 import { ResizablePanel, ResizableHandle, ResizablePanelGroup } from '@/components/ui/resizable';
+import LAYOUT_PANELS from '@/lib/constants/layout-panels';
 import cn from '@/lib/utils/cn';
 import { resetEditorSelection } from '@/lib/utils/editor-helpers';
+import setCookie from '@/lib/utils/set-cookie';
 
 type AdaptiveLayoutProps = {
   chat: React.ReactNode;
   editor: React.ReactNode;
+  initialChatWidth: number;
+  initialEditorWidth: number;
 };
 
 const VIEW_MODES = ['chat', 'split', 'editor'] as const;
 type ViewMode = (typeof VIEW_MODES)[number];
 
-export default function AdaptiveLayout({ chat, editor }: AdaptiveLayoutProps) {
+export default function AdaptiveLayout({ chat, editor, initialChatWidth, initialEditorWidth }: AdaptiveLayoutProps) {
   const { isMobile, setViewMode, viewMode } = React.use(MobileLayoutContext);
   const { isChatVisible } = React.use(ChatStatusContext);
   const [lexicalEditor] = useLexicalComposerContext();
-  const [isMounted, setIsMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const defaultDesktopLayout = React.useMemo(() => {
+    return {
+      'chat-panel': initialChatWidth,
+      'editor-panel': initialEditorWidth,
+    };
+  }, [initialChatWidth, initialEditorWidth]);
 
   React.useEffect(() => {
     if (isMobile && isChatVisible) {
       setViewMode('split');
     }
   }, [isMobile, isChatVisible, setViewMode]);
+
+  React.useEffect(() => {
+    setCookie('chat-collapsed', String(!isChatVisible));
+  }, [isChatVisible]);
+
+  function handleDesktopLayoutChanged(layout: Layout) {
+    const chatWidth = layout['chat-panel'];
+    const editorWidth = layout['editor-panel'];
+
+    if (typeof chatWidth === 'number') {
+      setCookie('chat-width', String(Math.round(chatWidth)));
+    }
+
+    if (typeof editorWidth === 'number') {
+      setCookie('editor-width', String(Math.round(editorWidth)));
+    }
+  }
 
   const cycleViewMode = React.useCallback(
     (direction: 'left' | 'right') => {
@@ -69,26 +91,31 @@ export default function AdaptiveLayout({ chat, editor }: AdaptiveLayoutProps) {
     },
   });
 
-  if (!isMounted) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <HelixLoader color="var(--foreground)" />
-      </div>
-    );
-  }
-
   if (!isMobile) {
     if (!isChatVisible) {
       return <div className="h-full min-h-0">{editor}</div>;
     }
 
     return (
-      <ResizablePanelGroup orientation="horizontal" className="h-full min-h-0">
-        <ResizablePanel minSize="20%" defaultSize="40%">
+      <ResizablePanelGroup
+        orientation="horizontal"
+        className="h-full min-h-0"
+        defaultLayout={defaultDesktopLayout}
+        onLayoutChanged={handleDesktopLayoutChanged}
+      >
+        <ResizablePanel
+          id="chat-panel"
+          defaultSize={`${initialChatWidth}%`}
+          minSize={`${LAYOUT_PANELS.CHAT_MIN_WIDTH}%`}
+        >
           <div className="h-full min-h-0">{chat}</div>
         </ResizablePanel>
         <ResizableHandle isWithHandle />
-        <ResizablePanel minSize="40%" defaultSize="60%">
+        <ResizablePanel
+          id="editor-panel"
+          defaultSize={`${initialEditorWidth}%`}
+          minSize={`${LAYOUT_PANELS.EDITOR_MIN_WIDTH}%`}
+        >
           <div className="h-full min-h-0">{editor}</div>
         </ResizablePanel>
       </ResizablePanelGroup>

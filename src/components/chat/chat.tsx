@@ -21,7 +21,7 @@ import ChatHeader from '@/components/chat/chat-header';
 import ChatPromptInput from '@/components/chat/chat-prompt-input';
 import { ChatStatusContext } from '@/components/providers/chat-status-provider';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import HelixLoader from '@/components/ui/helix-loader';
+import QuantumLoader from '@/components/ui/quantum-loader';
 import type { EditorCommandTools } from '@/lib/models/editor-commands';
 import executeEditorCommand from '@/lib/utils/execute-editor-command';
 import getErrorMessage from '@/lib/utils/get-error-message';
@@ -200,7 +200,7 @@ export default function Chat({ hasApiKey, isAuthenticated }: ChatProps) {
                 );
               })}
               {status === 'submitted' && (
-                <HelixLoader size={30} color="var(--foreground)" className="ml-3 animate-spin" />
+                <QuantumLoader size={30} color="var(--foreground)" className="ml-3 animate-spin" />
               )}
             </ConversationContent>
             <ConversationScrollButton />

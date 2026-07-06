@@ -49,7 +49,7 @@ type MoveDialogTarget = {
 };
 
 type MoveDirectoryItemOptions = MoveDialogTarget & {
-  destinationFolderId: string;
+  destinationFolderId: string | null;
 };
 
 type DocumentContextType = {
@@ -353,11 +353,7 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
 
   async function onDialogFormSubmit(values: z.infer<typeof documentFormSchema>) {
     if (dialogEntity === 'folder') {
-      const name = values.title?.trim();
-
-      if (!name) {
-        return form.setError('title', { message: 'Folder name is required' });
-      }
+      const name = values.title?.trim() || 'Untitled Folder';
 
       try {
         setIsSavingDialog(true);
@@ -424,7 +420,6 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
           }
 
           pendingCreatedDocumentIdRef.current = id;
-          router.replace(`/?document=${id}`);
         });
       }
 
@@ -637,11 +632,12 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
 
   const moveDirectoryItem = React.useCallback(
     async ({ destinationFolderId, id, kind }: MoveDirectoryItemOptions) => {
-      const destination = folders.find((folder) => {
-        return folder.id === destinationFolderId;
-      });
-
-      if (!destination) {
+      if (
+        destinationFolderId &&
+        !folders.some((folder) => {
+          return folder.id === destinationFolderId;
+        })
+      ) {
         return;
       }
 
@@ -653,7 +649,7 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
             return item.id === id;
           });
 
-          if (!document || document.folderId === destinationFolderId) {
+          if (!document || (document.folderId ?? null) === destinationFolderId) {
             return;
           }
 
@@ -668,7 +664,11 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
           });
           const excludedFolderIds = getFolderSubtreeIds(folders, id);
 
-          if (!folder || folder.parentId === destinationFolderId || excludedFolderIds.has(destinationFolderId)) {
+          if (
+            !folder ||
+            (folder.parentId ?? null) === destinationFolderId ||
+            (destinationFolderId && excludedFolderIds.has(destinationFolderId))
+          ) {
             return;
           }
 
@@ -679,7 +679,10 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
           });
         }
 
-        expandFolderAndAncestors(destinationFolderId);
+        if (destinationFolderId) {
+          expandFolderAndAncestors(destinationFolderId);
+        }
+
         toast.success(`${targetLabel} moved successfully`);
       } catch (error) {
         Sentry.captureException(error);
@@ -729,7 +732,7 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
 
       return {
         currentParentId: document?.folderId ?? null,
-        name: document?.title || 'Untitled',
+        name: document?.title || 'Untitled Document',
       };
     }
 
@@ -739,7 +742,7 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
 
     return {
       currentParentId: folder?.parentId ?? null,
-      name: folder?.name || 'Untitled',
+      name: folder?.name || 'Untitled Folder',
     };
   }, [moveDialogTarget, documents, folders]);
 
@@ -835,7 +838,7 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
                       <FormItem>
                         <FormLabel>{isFolderDialog ? 'Name' : 'Title'}</FormLabel>
                         <FormControl>
-                          <Input placeholder={isFolderDialog ? 'New Folder' : 'Untitled'} {...field} />
+                          <Input placeholder={isFolderDialog ? 'Untitled Folder' : 'Untitled Document'} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

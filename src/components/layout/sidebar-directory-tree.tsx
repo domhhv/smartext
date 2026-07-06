@@ -19,6 +19,7 @@ import {
   FolderIcon,
   FilePlusIcon,
   Settings2Icon,
+  FolderTreeIcon,
   FolderOpenIcon,
   FolderPlusIcon,
   FolderInputIcon,
@@ -48,6 +49,7 @@ import cn from '@/lib/utils/cn';
 import getFolderSubtreeIds from '@/lib/utils/get-folder-subtree-ids';
 
 const HOVER_EXPAND_DELAY = 500;
+const SIDEBAR_DIRECTORY_DND_ID = 'sidebar-directory-tree';
 
 type SidebarDirectoryTreeProps = {
   documents: DocumentItem[];
@@ -66,13 +68,17 @@ type FolderDropData = {
   kind: 'folder';
 };
 
+type RootDropData = {
+  kind: 'root';
+};
+
 type SelfDropData = {
   id: string;
   itemKind: DirectoryDragData['kind'];
   kind: 'self';
 };
 
-type DirectoryDropData = FolderDropData | SelfDropData;
+type DirectoryDropData = FolderDropData | RootDropData | SelfDropData;
 
 export default function SidebarDirectoryTree({ documents, folders }: SidebarDirectoryTreeProps) {
   const { expandedFolderIds, expandFolderAndAncestors, folders: allFolders, moveDirectoryItem } = useDocument();
@@ -82,8 +88,8 @@ export default function SidebarDirectoryTree({ documents, folders }: SidebarDire
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        delay: 100,
-        tolerance: 6,
+        delay: 200,
+        tolerance: 0,
       },
     })
   );
@@ -141,7 +147,25 @@ export default function SidebarDirectoryTree({ documents, folders }: SidebarDire
 
     resetDragState();
 
-    if (!dragData || !dropData || dropData.kind === 'self' || !canDropIntoFolder(dragData, dropData.id, allFolders)) {
+    if (!dragData || !dropData || dropData.kind === 'self') {
+      return;
+    }
+
+    if (dropData.kind === 'root') {
+      if (dragData.parentId === null) {
+        return;
+      }
+
+      await moveDirectoryItem({
+        destinationFolderId: null,
+        id: dragData.id,
+        kind: dragData.kind,
+      });
+
+      return;
+    }
+
+    if (!canDropIntoFolder(dragData, dropData.id, allFolders)) {
       return;
     }
 
@@ -156,6 +180,7 @@ export default function SidebarDirectoryTree({ documents, folders }: SidebarDire
     <DndContext
       sensors={sensors}
       onDragOver={handleDragOver}
+      id={SIDEBAR_DIRECTORY_DND_ID}
       onDragCancel={resetDragState}
       onDragStart={handleDragStart}
       collisionDetection={closestCenter}
@@ -163,7 +188,7 @@ export default function SidebarDirectoryTree({ documents, folders }: SidebarDire
         void handleDragEnd(event);
       }}
     >
-      <SidebarDirectoryTreeList folders={folders} documents={documents} />
+      <SidebarDirectoryTreeList isRoot folders={folders} documents={documents} activeDragItem={activeDragItem} />
       <DragOverlay>
         {activeDragItem && (
           <div className="bg-popover text-popover-foreground border-border flex h-8 max-w-64 items-center gap-2 rounded-md border px-3 text-sm font-medium shadow-lg">
@@ -180,16 +205,48 @@ export default function SidebarDirectoryTree({ documents, folders }: SidebarDire
   );
 }
 
-function SidebarDirectoryTreeList({ documents, folders }: SidebarDirectoryTreeProps) {
+function SidebarDirectoryTreeList({
+  activeDragItem,
+  documents,
+  folders,
+  isRoot = false,
+}: SidebarDirectoryTreeProps & {
+  activeDragItem: DirectoryDragData | null;
+  isRoot?: boolean;
+}) {
   return (
     <ul className="flex flex-col gap-1">
       {folders.map((folder) => {
         return <SidebarFolderItem key={folder.id} folder={folder} />;
       })}
+      {isRoot && activeDragItem?.parentId && <SidebarRootDropItem />}
       {documents.map((document) => {
         return <SidebarDocumentItem key={document.id} document={document} />;
       })}
     </ul>
+  );
+}
+
+function SidebarRootDropItem() {
+  const { isOver, setNodeRef } = useDroppable({
+    id: 'root-drop',
+    data: {
+      kind: 'root',
+    } satisfies RootDropData,
+  });
+
+  return (
+    <li ref={setNodeRef} className="relative rounded-md">
+      <div
+        className={cn(
+          'border-border text-muted-foreground flex h-8 items-center gap-2 rounded-md border border-dashed px-3 text-sm transition-colors',
+          isOver && 'border-primary bg-primary/10 text-primary'
+        )}
+      >
+        <FolderTreeIcon className="size-4 shrink-0" />
+        <span className="overflow-hidden text-ellipsis whitespace-nowrap">Move to top level</span>
+      </div>
+    </li>
   );
 }
 
@@ -214,7 +271,7 @@ function SidebarDocumentItem({ document }: { document: DocumentItem }) {
     data: {
       id: document.id,
       kind: 'document',
-      label: document.title || 'Untitled',
+      label: document.title || 'Untitled Document',
       parentId: document.folderId ?? null,
     } satisfies DirectoryDragData,
   });
@@ -318,7 +375,7 @@ function SidebarFolderItem({ folder }: { folder: FolderNode }) {
     data: {
       id: folder.id,
       kind: 'folder',
-      label: folder.name || 'Untitled',
+      label: folder.name || 'Untitled Folder',
       parentId: folder.parentId ?? null,
     } satisfies DirectoryDragData,
   });
@@ -479,7 +536,11 @@ function SidebarFolderItem({ folder }: { folder: FolderNode }) {
         <CollapsibleContent>
           {hasChildren ? (
             <div className="border-border mt-1 ml-4 border-l pl-1">
-              <SidebarDirectoryTreeList folders={folder.subfolders} documents={folder.documents} />
+              <SidebarDirectoryTreeList
+                folders={folder.subfolders}
+                documents={folder.documents}
+                activeDragItem={activeDragData}
+              />
             </div>
           ) : (
             <p className="text-muted-foreground mt-1 ml-6 py-1 pl-4 text-xs">Empty folder</p>
@@ -543,7 +604,23 @@ function getFolderDropData(data: unknown): FolderDropData | null {
 }
 
 function getDirectoryDropData(data: unknown): DirectoryDropData | null {
-  return getSelfDropData(data) ?? getFolderDropData(data);
+  return getSelfDropData(data) ?? getRootDropData(data) ?? getFolderDropData(data);
+}
+
+function getRootDropData(data: unknown): RootDropData | null {
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+
+  const value = data as Partial<RootDropData>;
+
+  if (value.kind === 'root') {
+    return {
+      kind: 'root',
+    };
+  }
+
+  return null;
 }
 
 function getSelfDropData(data: unknown): SelfDropData | null {
