@@ -23,7 +23,10 @@
       "mcp__sentry__search_issues",
       "mcp__sentry__get_sentry_resource",
       "Bash(node scripts/sqlfluff.mjs lint)",
-      "Bash(gh pr *)"
+      "Bash(gh pr *)",
+      "Bash(npm install *)",
+      "mcp__chrome-devtools__hover",
+      "mcp__chrome-devtools__press_key"
     ],
     "deny": [],
     "ask": []

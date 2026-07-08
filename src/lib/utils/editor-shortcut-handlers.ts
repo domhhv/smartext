@@ -173,6 +173,12 @@ export function isInsertLink(event: KeyboardEvent) {
   return code === 'KeyK' && isModifierMatch(event, CONTROL_OR_META);
 }
 
+export function isInsertTable(event: KeyboardEvent) {
+  const { code } = event;
+
+  return code === 'KeyT' && isModifierMatch(event, { ...CONTROL_OR_META, altKey: true });
+}
+
 export function isAddComment(event: KeyboardEvent) {
   const { code } = event;
 

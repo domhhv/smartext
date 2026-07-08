@@ -1,0 +1,34 @@
+.editor-table-selection {
+  *::selection {
+    background-color: transparent;
+  }
+}
+
+[contenteditable]:focus-within {
+  .editor-table-selected {
+    outline: 2px solid var(--ring);
+  }
+
+  .editor-table-cell-selected::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+    pointer-events: none;
+    background-color: color-mix(in oklch, var(--primary) 18%, transparent);
+  }
+}
+
+.editor-table-cell-selected {
+  caret-color: transparent;
+}
+
+.editor-table-cell-resizer {
+  position: absolute;
+  touch-action: none;
+}
+
+@media (pointer: coarse) {
+  .editor-table-cell-resizer {
+    background-color: color-mix(in oklch, var(--primary) 40%, transparent);
+  }
+}
