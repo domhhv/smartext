@@ -19,8 +19,12 @@ import * as React from 'react';
 
 import FloatingLinkEditorPlugin from '@/components/editor/plugins/floating-link-editor-plugin';
 import ShortcutsPlugin from '@/components/editor/plugins/shortcuts-plugin';
+import TableActionMenuPlugin from '@/components/editor/plugins/table-action-menu-plugin';
+import TableCellResizerPlugin from '@/components/editor/plugins/table-cell-resizer-plugin';
+import TableHoverActionsPlugin from '@/components/editor/plugins/table-hover-actions-plugin';
 import ToolbarPlugin from '@/components/editor/plugins/toolbar-editor-plugin';
 import '@/lib/styles/editor-check-list.scss';
+import '@/lib/styles/editor-table.scss';
 import { ChatStatusContext } from '@/components/providers/chat-status-provider';
 import { useDocument } from '@/components/providers/document-provider';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -35,7 +39,7 @@ export default function Editor() {
   const [isFocused, setIsFocused] = React.useState(false);
   const { status } = React.use(ChatStatusContext);
   const { handleEditorChange } = useDocument();
-  const floatingAnchorRef = React.useRef<HTMLDivElement>(null);
+  const [floatingAnchorElem, setFloatingAnchorElem] = React.useState<HTMLDivElement | null>(null);
 
   function fillSampleContent(content: string, key: SampleContentKey) {
     posthog.capture('fill_sample_content', { content_type: key });
@@ -79,7 +83,7 @@ export default function Editor() {
         ErrorBoundary={LexicalErrorBoundary}
         contentEditable={
           <div
-            ref={floatingAnchorRef}
+            ref={setFloatingAnchorElem}
             className="border-border focus-within:border-foreground group relative min-h-0 flex-1 overflow-y-auto border-t px-[1px] pb-[1px] focus-within:border focus-within:px-0 focus-within:pb-0.5"
           >
             <ContentEditable
@@ -141,7 +145,14 @@ export default function Editor() {
       <LinkPlugin validateUrl={validateUrl} />
       <OnChangePlugin onChange={handleEditorChange} />
       <MarkdownShortcutPlugin transformers={ENHANCED_LEXICAL_TRANSFORMERS} />
-      {floatingAnchorRef.current && <FloatingLinkEditorPlugin anchor={floatingAnchorRef.current} />}
+      {floatingAnchorElem && (
+        <>
+          <FloatingLinkEditorPlugin anchor={floatingAnchorElem} />
+          <TableCellResizerPlugin />
+          <TableActionMenuPlugin anchor={floatingAnchorElem} />
+          <TableHoverActionsPlugin anchor={floatingAnchorElem} />
+        </>
+      )}
     </div>
   );
 }

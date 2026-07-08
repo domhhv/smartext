@@ -3,6 +3,7 @@ import { TOGGLE_LINK_COMMAND } from '@lexical/link';
 import { $convertToMarkdownString, $convertFromMarkdownString } from '@lexical/markdown';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { $patchStyleText } from '@lexical/selection';
+import { INSERT_TABLE_COMMAND } from '@lexical/table';
 import * as Sentry from '@sentry/nextjs';
 import Color from 'color';
 import {
@@ -28,6 +29,7 @@ import {
   LinkIcon,
   SaveIcon,
   QuoteIcon,
+  TableIcon,
   IndentIcon,
   ItalicIcon,
   EraserIcon,
@@ -53,6 +55,7 @@ import { toast } from 'sonner';
 import EditorColorPicker from '@/components/custom/editor-color-picker';
 import FontSizeInput from '@/components/custom/font-size-input';
 import Shortcut from '@/components/custom/shortcut';
+import TableSizePicker from '@/components/custom/table-size-picker';
 import TooltipButton from '@/components/custom/tooltip-button';
 import { ChatStatusContext } from '@/components/providers/chat-status-provider';
 import { useDocument } from '@/components/providers/document-provider';
@@ -125,6 +128,7 @@ export default function ToolbarEditorPlugin() {
   const [isHeadingsDropdownOpen, setIsHeadingsDropdownOpen] = React.useState(false);
   const [isListsDropdownOpen, setIsListsDropdownOpen] = React.useState(false);
   const [isTextFormatDropdownOpen, setIsTextFormatDropdownOpen] = React.useState(false);
+  const [isTableSizePickerOpen, setIsTableSizePickerOpen] = React.useState(false);
   const [fontColor, setFontColor] = React.useState('');
   const [backgroundColor, setBackgroundColor] = React.useState('');
   const [isSavingActiveDocument, setIsSavingActiveDocument] = React.useState(false);
@@ -553,6 +557,26 @@ export default function ToolbarEditorPlugin() {
             <LinkIcon />
           </TooltipButton>
         </ButtonGroup>
+
+        <Popover open={isTableSizePickerOpen} onOpenChange={setIsTableSizePickerOpen}>
+          <PopoverTrigger asChild>
+            <Button size="icon" variant="ghost" className="shrink-0" aria-label="Insert table">
+              <TableIcon />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-fit">
+            <TableSizePicker
+              onSelect={(rows, columns) => {
+                editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+                  columns: String(columns),
+                  includeHeaders: { columns: false, rows: true },
+                  rows: String(rows),
+                });
+                setIsTableSizePickerOpen(false);
+              }}
+            />
+          </PopoverContent>
+        </Popover>
 
         <Separator className="h-6!" orientation="vertical" />
 

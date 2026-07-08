@@ -1,6 +1,7 @@
 import { TOGGLE_LINK_COMMAND } from '@lexical/link';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import type { HeadingTagType } from '@lexical/rich-text';
+import { INSERT_TABLE_COMMAND } from '@lexical/table';
 import {
   $getRoot,
   $getSelection,
@@ -43,6 +44,7 @@ import {
   isFormatQuote,
   isSuperscript,
   isClearEditor,
+  isInsertTable,
   isJustifyAlign,
   isFormatHeading,
   isStrikeThrough,
@@ -219,6 +221,16 @@ export default function ShortcutsPlugin() {
             } else {
               editor.dispatchCommand(TOGGLE_LINK_COMMAND, 'https://');
             }
+          });
+        },
+      },
+      {
+        check: isInsertTable,
+        execute: () => {
+          editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+            columns: '5',
+            includeHeaders: { columns: false, rows: true },
+            rows: '5',
           });
         },
       },

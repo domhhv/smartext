@@ -27,6 +27,7 @@ const EDITOR_SHORTCUTS = Object.freeze({
   INDENT: [CMD, ']'],
   INSERT_CODE_BLOCK: [CMD, SHIFT, 'C'],
   INSERT_LINK: [CMD, 'K'],
+  INSERT_TABLE: [CMD, ALT, 'T'],
   ITALIC: [CMD, 'I'],
   JUSTIFY_ALIGN: [CMD, SHIFT, 'J'],
   LEFT_ALIGN: [CMD, SHIFT, 'L'],
