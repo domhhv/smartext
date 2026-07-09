@@ -97,6 +97,9 @@ export default function TableHoverActionsPlugin({ anchor }: { anchor: HTMLElemen
 
     function hide() {
       debouncedUpdateFromPoint.cancel();
+      clearTimeout(updateTimeoutId);
+      updateTimeoutId = undefined;
+      lastPointerPosRef.current = null;
       setHoveredTable(null);
     }
 
@@ -109,6 +112,13 @@ export default function TableHoverActionsPlugin({ anchor }: { anchor: HTMLElemen
 
       updateTimeoutId = setTimeout(() => {
         updateTimeoutId = undefined;
+
+        if (document.body.hasAttribute('data-table-resizing')) {
+          setHoveredTable(null);
+
+          return;
+        }
+
         updateFromPoint(lastPointerPos.x, lastPointerPos.y);
       }, 0);
     });
