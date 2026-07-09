@@ -38,16 +38,13 @@ function isPointerNearTable(tableElement: HTMLTableElement, clientX: number, cli
 
 export default function TableHoverActionsPlugin({ anchor }: { anchor: HTMLElement }) {
   const [editor] = useLexicalComposerContext();
+  const lastPointerPosRef = React.useRef<{ x: number; y: number } | null>(null);
   const [hoveredTable, setHoveredTable] = React.useState<HoveredTable | null>(null);
 
   React.useEffect(() => {
-    const onPointerMove = debounce((event: PointerEvent) => {
-      if (document.body.hasAttribute('data-table-resizing')) {
-        setHoveredTable(null);
+    let updateTimeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
 
-        return;
-      }
-
+    function updateFromPoint(clientX: number, clientY: number) {
       const rootElement = editor.getRootElement();
 
       if (!rootElement) {
@@ -55,7 +52,7 @@ export default function TableHoverActionsPlugin({ anchor }: { anchor: HTMLElemen
       }
 
       const tableElement = [...rootElement.querySelectorAll<HTMLTableElement>('table.editor-table')].find((el) => {
-        return isPointerNearTable(el, event.clientX, event.clientY);
+        return isPointerNearTable(el, clientX, clientY);
       });
 
       if (!tableElement) {
@@ -81,12 +78,40 @@ export default function TableHoverActionsPlugin({ anchor }: { anchor: HTMLElemen
 
         setHoveredTable({ isRightEdgeClipped, tableNodeKey: tableNode.getKey(), tableRect });
       });
+    }
+
+    const debouncedUpdateFromPoint = debounce((clientX: number, clientY: number) => {
+      if (document.body.hasAttribute('data-table-resizing')) {
+        setHoveredTable(null);
+
+        return;
+      }
+
+      updateFromPoint(clientX, clientY);
     }, 50);
 
+    function onPointerMove(event: PointerEvent) {
+      lastPointerPosRef.current = { x: event.clientX, y: event.clientY };
+      debouncedUpdateFromPoint(event.clientX, event.clientY);
+    }
+
     function hide() {
-      onPointerMove.cancel();
+      debouncedUpdateFromPoint.cancel();
       setHoveredTable(null);
     }
+
+    const unregisterUpdateListener = editor.registerUpdateListener(() => {
+      const lastPointerPos = lastPointerPosRef.current;
+
+      if (!lastPointerPos || updateTimeoutId !== undefined) {
+        return;
+      }
+
+      updateTimeoutId = setTimeout(() => {
+        updateTimeoutId = undefined;
+        updateFromPoint(lastPointerPos.x, lastPointerPos.y);
+      }, 0);
+    });
 
     document.addEventListener('pointermove', onPointerMove);
     document.addEventListener('pointerleave', hide);
@@ -94,7 +119,9 @@ export default function TableHoverActionsPlugin({ anchor }: { anchor: HTMLElemen
     window.addEventListener('resize', hide);
 
     return () => {
-      onPointerMove.cancel();
+      unregisterUpdateListener();
+      clearTimeout(updateTimeoutId);
+      debouncedUpdateFromPoint.cancel();
       document.removeEventListener('pointermove', onPointerMove);
       document.removeEventListener('pointerleave', hide);
       anchor.removeEventListener('scroll', hide);

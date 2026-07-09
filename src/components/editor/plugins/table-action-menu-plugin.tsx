@@ -64,6 +64,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { Alignment } from '@/lib/constants/editor-toolbar-alignments';
 import ELEMENT_FORMAT_OPTIONS from '@/lib/constants/editor-toolbar-alignments';
+import $getSelectedTableCells from '@/lib/utils/get-selected-table-cells';
 
 const MENU_BUTTON_SIZE = 20;
 const MENU_BUTTON_MARGIN = 4;
@@ -109,28 +110,6 @@ function $selectLastDescendant(node: ElementNode) {
   } else if (lastDescendant !== null) {
     lastDescendant.selectNext();
   }
-}
-
-function $getSelectedTableCells(selection: BaseSelection | null) {
-  const cells = new Set<TableCellNode>();
-
-  if ($isRangeSelection(selection) || $isTableSelection(selection)) {
-    const [anchorCell] = $getNodeTriplet(selection.anchor);
-
-    if ($isTableCellNode(anchorCell)) {
-      cells.add(anchorCell);
-    }
-
-    if ($isTableSelection(selection)) {
-      selection.getNodes().forEach((node) => {
-        if ($isTableCellNode(node)) {
-          cells.add(node);
-        }
-      });
-    }
-  }
-
-  return [...cells];
 }
 
 export default function TableActionMenuPlugin({ anchor }: { anchor: HTMLElement }) {

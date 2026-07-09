@@ -40,9 +40,11 @@ const INITIAL_TOOLBAR_STATE = {
   isStrikethrough: false,
   isSubscript: false,
   isSuperscript: false,
+  isTableCell: false,
   isUnderline: false,
   isUppercase: false,
   linkUrl: '',
+  tableCellBackgroundColor: '',
 };
 
 export default INITIAL_TOOLBAR_STATE;
