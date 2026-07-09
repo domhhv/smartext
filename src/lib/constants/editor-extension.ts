@@ -3,9 +3,8 @@ import { HorizontalRuleNode, HorizontalRuleExtension } from '@lexical/extension'
 import { LinkNode, AutoLinkNode } from '@lexical/link';
 import { ListNode, ListItemNode } from '@lexical/list';
 import { QuoteNode, HeadingNode } from '@lexical/rich-text';
-import { TableExtension } from '@lexical/table';
-import { TableNode, TableRowNode, TableCellNode } from '@lexical/table';
-import { LineBreakNode, defineExtension } from 'lexical';
+import { TableNode, TableExtension } from '@lexical/table';
+import { $isRootNode, LineBreakNode, defineExtension, $createParagraphNode } from 'lexical';
 import { toast } from 'sonner';
 
 import { ImageNode } from '@/components/editor/nodes/image-node';
@@ -24,10 +23,7 @@ const LEXICAL_EDITOR_EXTENSION = defineExtension({
       QuoteNode,
       AutoLinkNode,
       LinkNode,
-      TableNode,
-      TableCellNode,
       HorizontalRuleNode,
-      TableRowNode,
       LineBreakNode,
       ImageNode,
     ];
@@ -35,6 +31,21 @@ const LEXICAL_EDITOR_EXTENSION = defineExtension({
   onError: (error) => {
     toast('An error occurred in the editor', {
       description: getErrorMessage(error),
+    });
+  },
+  register: (editor) => {
+    return editor.registerNodeTransform(TableNode, (tableNode) => {
+      if (!$isRootNode(tableNode.getParent())) {
+        return;
+      }
+
+      if (tableNode.getPreviousSibling() === null) {
+        tableNode.insertBefore($createParagraphNode());
+      }
+
+      if (tableNode.getNextSibling() === null) {
+        tableNode.insertAfter($createParagraphNode());
+      }
     });
   },
   theme: {

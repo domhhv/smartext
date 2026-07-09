@@ -8,8 +8,7 @@ import {
   $insertTableRowAtSelection,
   $insertTableColumnAtSelection,
 } from '@lexical/table';
-import { mergeRegister } from '@lexical/utils';
-import { $getNodeByKey, isHTMLElement, $getNearestNodeFromDOMNode } from 'lexical';
+import { $getNodeByKey, $getNearestNodeFromDOMNode } from 'lexical';
 import debounce from 'lodash.debounce';
 import { PlusIcon } from 'lucide-react';
 import * as React from 'react';
@@ -17,6 +16,7 @@ import { createPortal } from 'react-dom';
 
 const BUTTON_THICKNESS = 16;
 const BUTTON_GAP = 4;
+const HOVER_MARGIN = 4;
 
 type HoveredTable = {
   isRightEdgeClipped: boolean;
@@ -24,9 +24,20 @@ type HoveredTable = {
   tableRect: DOMRect;
 };
 
+function isPointerNearTable(tableElement: HTMLTableElement, clientX: number, clientY: number) {
+  const rect = tableElement.getBoundingClientRect();
+  const outerMargin = BUTTON_THICKNESS + BUTTON_GAP + HOVER_MARGIN;
+
+  return (
+    clientX >= rect.left - HOVER_MARGIN &&
+    clientX <= rect.right + outerMargin &&
+    clientY >= rect.top - HOVER_MARGIN &&
+    clientY <= rect.bottom + outerMargin
+  );
+}
+
 export default function TableHoverActionsPlugin({ anchor }: { anchor: HTMLElement }) {
   const [editor] = useLexicalComposerContext();
-  const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [hoveredTable, setHoveredTable] = React.useState<HoveredTable | null>(null);
 
   React.useEffect(() => {
@@ -37,16 +48,17 @@ export default function TableHoverActionsPlugin({ anchor }: { anchor: HTMLElemen
         return;
       }
 
-      const target = event.target;
+      const rootElement = editor.getRootElement();
 
-      if (!isHTMLElement(target) || target.closest('[data-table-resizer]')) {
+      if (!rootElement) {
         return;
       }
 
-      const tableElement = target.closest<HTMLTableElement>('table.editor-table');
-      const rootElement = editor.getRootElement();
+      const tableElement = [...rootElement.querySelectorAll<HTMLTableElement>('table.editor-table')].find((el) => {
+        return isPointerNearTable(el, event.clientX, event.clientY);
+      });
 
-      if (!tableElement || !rootElement?.contains(tableElement)) {
+      if (!tableElement) {
         setHoveredTable(null);
 
         return;
@@ -71,38 +83,23 @@ export default function TableHoverActionsPlugin({ anchor }: { anchor: HTMLElemen
       });
     }, 50);
 
-    function onPointerLeave(event: PointerEvent) {
-      const relatedTarget = event.relatedTarget;
-
-      if (relatedTarget instanceof Node && containerRef.current?.contains(relatedTarget)) {
-        return;
-      }
-
-      onPointerMove.cancel();
-      setHoveredTable(null);
-    }
-
     function hide() {
       onPointerMove.cancel();
       setHoveredTable(null);
     }
 
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerleave', hide);
     anchor.addEventListener('scroll', hide);
     window.addEventListener('resize', hide);
 
-    return mergeRegister(
-      editor.registerRootListener((rootElement, prevRootElement) => {
-        prevRootElement?.removeEventListener('pointermove', onPointerMove);
-        prevRootElement?.removeEventListener('pointerleave', onPointerLeave);
-        rootElement?.addEventListener('pointermove', onPointerMove);
-        rootElement?.addEventListener('pointerleave', onPointerLeave);
-      }),
-      () => {
-        onPointerMove.cancel();
-        anchor.removeEventListener('scroll', hide);
-        window.removeEventListener('resize', hide);
-      }
-    );
+    return () => {
+      onPointerMove.cancel();
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerleave', hide);
+      anchor.removeEventListener('scroll', hide);
+      window.removeEventListener('resize', hide);
+    };
   }, [editor, anchor]);
 
   function appendRow() {
@@ -167,7 +164,7 @@ export default function TableHoverActionsPlugin({ anchor }: { anchor: HTMLElemen
     'bg-muted hover:bg-accent text-muted-foreground hover:text-accent-foreground flex cursor-pointer items-center justify-center rounded-sm transition-colors';
 
   return createPortal(
-    <div ref={containerRef} className="absolute top-0 left-0 z-10">
+    <div className="absolute top-0 left-0 z-10">
       <button
         type="button"
         onClick={appendRow}

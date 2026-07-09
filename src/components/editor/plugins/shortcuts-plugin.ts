@@ -1,7 +1,6 @@
 import { TOGGLE_LINK_COMMAND } from '@lexical/link';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import type { HeadingTagType } from '@lexical/rich-text';
-import { INSERT_TABLE_COMMAND } from '@lexical/table';
 import {
   $getRoot,
   $getSelection,
@@ -17,6 +16,7 @@ import {
 import * as React from 'react';
 
 import { ToolbarStateContext } from '@/components/providers/editor-toolbar-state-provider';
+import OPEN_INSERT_TABLE_POPOVER_COMMAND from '@/lib/constants/editor-custom-commands';
 import { MAX_ALLOWED_FONT_SIZE, MIN_ALLOWED_FONT_SIZE } from '@/lib/constants/initial-editor-toolbar-state';
 import {
   formatQuote,
@@ -227,11 +227,7 @@ export default function ShortcutsPlugin() {
       {
         check: isInsertTable,
         execute: () => {
-          editor.dispatchCommand(INSERT_TABLE_COMMAND, {
-            columns: '5',
-            includeHeaders: { columns: false, rows: true },
-            rows: '5',
-          });
+          editor.dispatchCommand(OPEN_INSERT_TABLE_POPOVER_COMMAND, undefined);
         },
       },
       {

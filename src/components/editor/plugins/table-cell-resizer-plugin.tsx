@@ -365,15 +365,22 @@ function TableCellResizer({ editor }: { editor: LexicalEditor }) {
 
       styles[draggingDirection].backgroundColor = 'var(--primary)';
       styles[draggingDirection].mixBlendMode = 'unset';
-    } else if (!draggingDirection && hoveredDirection === 'right') {
+    } else if (!draggingDirection && hoveredDirection !== null) {
       const highlightStart = RESIZE_ZONE_WIDTH / 2 - 1;
+      const gradientAngle = hoveredDirection === 'right' ? '90deg' : '180deg';
 
-      styles.right.backgroundImage = `linear-gradient(90deg, transparent ${highlightStart}px, var(--primary) ${highlightStart}px, var(--primary) ${highlightStart + 2}px, transparent ${highlightStart + 2}px)`;
-      styles.right.mixBlendMode = 'unset';
+      styles[hoveredDirection].backgroundImage =
+        `linear-gradient(${gradientAngle}, transparent ${highlightStart}px, var(--primary) ${highlightStart}px, var(--primary) ${highlightStart + 2}px, transparent ${highlightStart + 2}px)`;
+      styles[hoveredDirection].mixBlendMode = 'unset';
 
-      if (tableRect) {
+      if (tableRect && hoveredDirection === 'right') {
         styles.right.top = `${window.scrollY + tableRect.top}px`;
         styles.right.height = `${tableRect.height}px`;
+      }
+
+      if (tableRect && hoveredDirection === 'bottom') {
+        styles.bottom.left = `${window.scrollX + tableRect.left}px`;
+        styles.bottom.width = `${tableRect.width}px`;
       }
     }
 
@@ -411,9 +418,11 @@ function TableCellResizer({ editor }: { editor: LexicalEditor }) {
             onPointerEnter={handlePointerEnter('right')}
           />
           <div
+            onPointerLeave={handlePointerLeave}
             className="editor-table-cell-resizer"
             onPointerDown={toggleResize('bottom')}
             style={resizerStyles.bottom || undefined}
+            onPointerEnter={handlePointerEnter('bottom')}
           />
         </>
       )}
