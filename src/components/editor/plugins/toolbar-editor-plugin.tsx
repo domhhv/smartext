@@ -17,6 +17,7 @@ import {
   type TextFormatType,
   FORMAT_ELEMENT_COMMAND,
   INDENT_CONTENT_COMMAND,
+  COMMAND_PRIORITY_NORMAL,
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
 import {
@@ -72,8 +73,9 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { updateDocument } from '@/lib/actions/document.actions';
+import OPEN_INSERT_TABLE_POPOVER_COMMAND from '@/lib/constants/editor-custom-commands';
 import { default as KBD } from '@/lib/constants/editor-shortcuts';
 import type { Alignment } from '@/lib/constants/editor-toolbar-alignments';
 import ELEMENT_FORMAT_OPTIONS from '@/lib/constants/editor-toolbar-alignments';
@@ -137,6 +139,18 @@ export default function ToolbarEditorPlugin() {
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  React.useEffect(() => {
+    return editor.registerCommand(
+      OPEN_INSERT_TABLE_POPOVER_COMMAND,
+      () => {
+        setIsTableSizePickerOpen(true);
+
+        return true;
+      },
+      COMMAND_PRIORITY_NORMAL
+    );
+  }, [editor]);
 
   const foreground = useCssVar('--foreground');
   const background = useCssVar('--background');
@@ -559,11 +573,18 @@ export default function ToolbarEditorPlugin() {
         </ButtonGroup>
 
         <Popover open={isTableSizePickerOpen} onOpenChange={setIsTableSizePickerOpen}>
-          <PopoverTrigger asChild>
-            <Button size="icon" variant="ghost" className="shrink-0" aria-label="Insert table">
-              <TableIcon />
-            </Button>
-          </PopoverTrigger>
+          <Tooltip delayDuration={tooltipGroup.getTooltipProps().delayDuration}>
+            <TooltipTrigger asChild onMouseEnter={tooltipGroup.getTooltipProps().onMouseEnter}>
+              <PopoverTrigger asChild>
+                <Button size="icon" variant="ghost" className="shrink-0" aria-label="Insert table">
+                  <TableIcon />
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-2 p-2 pr-2.5">
+              Insert table <Shortcut keys={KBD.INSERT_TABLE} />
+            </TooltipContent>
+          </Tooltip>
           <PopoverContent className="w-fit">
             <TableSizePicker
               onSelect={(rows, columns) => {
