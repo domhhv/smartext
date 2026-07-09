@@ -3,7 +3,7 @@ import { $isListNode } from '@lexical/list';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { $isHeadingNode } from '@lexical/rich-text';
 import { $getSelectionStyleValueForProperty } from '@lexical/selection';
-import { $isTableSelection } from '@lexical/table';
+import { $isTableSelection, $getTableCellNodeFromLexicalNode } from '@lexical/table';
 import { mergeRegister } from '@lexical/utils';
 import {
   $getSelection,
@@ -183,6 +183,15 @@ export default function useEditorToolbarSync() {
           updateToolbarState('blockType', blockType as keyof typeof blockTypeToBlockName);
         }
       }
+    }
+
+    if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+      const tableCellNode = $getTableCellNodeFromLexicalNode(selection.anchor.getNode());
+
+      updateToolbarState('isTableCell', tableCellNode !== null);
+      updateToolbarState('tableCellBackgroundColor', tableCellNode?.getBackgroundColor() || currentBackgroundColor);
+    } else {
+      updateToolbarState('isTableCell', false);
     }
 
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {

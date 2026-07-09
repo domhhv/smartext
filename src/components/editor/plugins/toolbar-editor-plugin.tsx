@@ -3,18 +3,19 @@ import { TOGGLE_LINK_COMMAND } from '@lexical/link';
 import { $convertToMarkdownString, $convertFromMarkdownString } from '@lexical/markdown';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { $patchStyleText } from '@lexical/selection';
-import { INSERT_TABLE_COMMAND } from '@lexical/table';
+import { $isTableCellNode, INSERT_TABLE_COMMAND } from '@lexical/table';
 import * as Sentry from '@sentry/nextjs';
-import Color from 'color';
 import {
   REDO_COMMAND,
   UNDO_COMMAND,
   HISTORIC_TAG,
+  $getNodeByKey,
   $getSelection,
   $addUpdateTag,
   $isRangeSelection,
   FORMAT_TEXT_COMMAND,
   type TextFormatType,
+  SKIP_DOM_SELECTION_TAG,
   FORMAT_ELEMENT_COMMAND,
   INDENT_CONTENT_COMMAND,
   COMMAND_PRIORITY_NORMAL,
@@ -39,6 +40,7 @@ import {
   BaselineIcon,
   DownloadIcon,
   UnderlineIcon,
+  PaintRollerIcon,
   ChevronDownIcon,
   TextInitialIcon,
   PaintBucketIcon,
@@ -101,6 +103,7 @@ import {
   formatNumberedList,
 } from '@/lib/utils/editor-helpers';
 import getErrorMessage from '@/lib/utils/get-error-message';
+import $getSelectedTableCells from '@/lib/utils/get-selected-table-cells';
 
 const FONT_FAMILIES = [
   'Arial',
@@ -131,8 +134,12 @@ export default function ToolbarEditorPlugin() {
   const [isListsDropdownOpen, setIsListsDropdownOpen] = React.useState(false);
   const [isTextFormatDropdownOpen, setIsTextFormatDropdownOpen] = React.useState(false);
   const [isTableSizePickerOpen, setIsTableSizePickerOpen] = React.useState(false);
+  const [isCellBackgroundColorPickerOpen, setIsCellBackgroundColorPickerOpen] = React.useState(false);
   const [fontColor, setFontColor] = React.useState('');
   const [backgroundColor, setBackgroundColor] = React.useState('');
+  const [cellBackgroundColor, setCellBackgroundColor] = React.useState('');
+  const targetCellKeysRef = React.useRef<string[]>([]);
+  const previousCellBackgroundsRef = React.useRef(new Map<string, null | string>());
   const [isSavingActiveDocument, setIsSavingActiveDocument] = React.useState(false);
   useEditorToolbarSync();
 
@@ -268,6 +275,111 @@ export default function ToolbarEditorPlugin() {
   React.useEffect(() => {
     setBackgroundColor(toolbarState.backgroundColor);
   }, [toolbarState.backgroundColor]);
+
+  React.useEffect(() => {
+    setCellBackgroundColor(toolbarState.tableCellBackgroundColor);
+  }, [toolbarState.tableCellBackgroundColor]);
+
+  const applyCellBackgroundEmphasis = React.useCallback(() => {
+    targetCellKeysRef.current.forEach((key) => {
+      const element = editor.getElementByKey(key);
+
+      if (element) {
+        element.style.outline = '2px dashed var(--primary)';
+        element.style.outlineOffset = '-2px';
+      }
+    });
+  }, [editor]);
+
+  const clearCellBackgroundEmphasis = React.useCallback(() => {
+    targetCellKeysRef.current.forEach((key) => {
+      const element = editor.getElementByKey(key);
+
+      if (element) {
+        element.style.outline = '';
+        element.style.outlineOffset = '';
+      }
+    });
+  }, [editor]);
+
+  const cancelCellBackgroundColor = React.useCallback(() => {
+    editor.update(
+      () => {
+        $addUpdateTag(HISTORIC_TAG);
+        $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+        previousCellBackgroundsRef.current.forEach((background, key) => {
+          const cell = $getNodeByKey(key);
+
+          if ($isTableCellNode(cell)) {
+            cell.setBackgroundColor(background);
+          }
+        });
+      },
+      { onUpdate: clearCellBackgroundEmphasis }
+    );
+    setIsCellBackgroundColorPickerOpen(false);
+  }, [editor, clearCellBackgroundEmphasis]);
+
+  React.useEffect(() => {
+    if (!toolbarState.isTableCell && isCellBackgroundColorPickerOpen) {
+      cancelCellBackgroundColor();
+    }
+  }, [toolbarState.isTableCell, isCellBackgroundColorPickerOpen, cancelCellBackgroundColor]);
+
+  function handleCellBackgroundColorOpenChange(open: boolean) {
+    if (!open) {
+      cancelCellBackgroundColor();
+
+      return;
+    }
+
+    editor.read('latest', () => {
+      const cells = $getSelectedTableCells($getSelection());
+
+      targetCellKeysRef.current = cells.map((cell) => {
+        return cell.getKey();
+      });
+      previousCellBackgroundsRef.current = new Map(
+        cells.map((cell) => {
+          return [cell.getKey(), cell.getBackgroundColor()];
+        })
+      );
+    });
+    applyCellBackgroundEmphasis();
+    setIsFontColorPickerOpen(false);
+    setIsBackgroundColorPickerOpen(false);
+    setIsCellBackgroundColorPickerOpen(true);
+  }
+
+  function handleCellBackgroundColorChange(value: string, skipHistoryStack: boolean) {
+    if (!isCellBackgroundColorPickerOpen || (!skipHistoryStack && value === cellBackgroundColor)) {
+      return;
+    }
+
+    setCellBackgroundColor(value);
+    editor.update(
+      () => {
+        if (skipHistoryStack) {
+          $addUpdateTag(HISTORIC_TAG);
+        }
+
+        $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+        targetCellKeysRef.current.forEach((key) => {
+          const cell = $getNodeByKey(key);
+
+          if ($isTableCellNode(cell)) {
+            cell.setBackgroundColor(value);
+          }
+        });
+      },
+      { onUpdate: applyCellBackgroundEmphasis }
+    );
+  }
+
+  function applyCellBackgroundColor() {
+    clearCellBackgroundEmphasis();
+    setIsCellBackgroundColorPickerOpen(false);
+  }
 
   const applyFontColor = React.useCallback(() => {
     setIsFontColorPickerOpen(false);
@@ -755,15 +867,8 @@ export default function ToolbarEditorPlugin() {
 
         <Popover open={isFontColorPickerOpen} onOpenChange={handleFontColorOpenChange}>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="secondary" className="shrink-0 gap-0 space-x-2">
-              <div
-                className="flex size-4 items-center justify-center rounded-md"
-                style={{
-                  color: fontColor ? Color(fontColor).alpha(0.8).string() : 'var(--text-foreground)',
-                }}
-              >
-                <BaselineIcon strokeWidth="2.5px" />
-              </div>
+            <Button size="sm" variant="secondary" aria-label="Font color" className="shrink-0 gap-0 space-x-2">
+              <BaselineIcon strokeWidth="2.5px" />
               <ChevronDownIcon />
             </Button>
           </PopoverTrigger>
@@ -806,15 +911,8 @@ export default function ToolbarEditorPlugin() {
 
         <Popover open={isBackgroundColorPickerOpen} onOpenChange={handleBackgroundColorOpenChange}>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="secondary" className="shrink-0 gap-0 space-x-2">
-              <div
-                className="flex size-4 items-center justify-center rounded-md"
-                style={{
-                  color: backgroundColor ? Color(backgroundColor).alpha(0.8).string() : 'var(--text-foreground)',
-                }}
-              >
-                <PaintBucketIcon strokeWidth="2.5px" />
-              </div>
+            <Button size="sm" variant="secondary" aria-label="Background color" className="shrink-0 gap-0 space-x-2">
+              <PaintBucketIcon strokeWidth="2.5px" />
               <ChevronDownIcon />
             </Button>
           </PopoverTrigger>
@@ -854,6 +952,40 @@ export default function ToolbarEditorPlugin() {
             </div>
           </PopoverContent>
         </Popover>
+
+        {toolbarState.isTableCell && (
+          <Popover open={isCellBackgroundColorPickerOpen} onOpenChange={handleCellBackgroundColorOpenChange}>
+            <PopoverTrigger asChild>
+              <Button
+                size="sm"
+                variant="secondary"
+                aria-label="Cell background color"
+                className="shrink-0 gap-0 space-x-2"
+              >
+                <PaintRollerIcon strokeWidth="2.5px" />
+                <ChevronDownIcon />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent asChild>
+              <div className="w-[305px] space-y-4">
+                <div className="text-muted-foreground flex items-center justify-between">
+                  <p className="text-sm">Cell background color</p>
+                  <Button size="xs" variant="ghost" onClick={cancelCellBackgroundColor}>
+                    <XIcon className="size-4" />
+                  </Button>
+                </div>
+                <EditorColorPicker value={cellBackgroundColor} onChange={handleCellBackgroundColorChange} />
+                <Button variant="outline" className="w-full" onClick={cancelCellBackgroundColor}>
+                  <div className="rounded border border-current px-1 py-0.5 text-xs">Esc</div>
+                  <span>Cancel</span>
+                </Button>
+                <Button className="w-full" onClick={applyCellBackgroundColor}>
+                  <span>Apply</span>
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
 
         <Separator orientation="vertical" className="h-6! shrink-0 self-center justify-self-center" />
 
