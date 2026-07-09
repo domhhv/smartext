@@ -6,10 +6,12 @@ import {
   KeyIcon,
   MoonIcon,
   LogInIcon,
+  UploadIcon,
   MonitorIcon,
   FolderPlusIcon,
   ChevronDownIcon,
   ExternalLinkIcon,
+  ClipboardPasteIcon,
   FilePlusCornerIcon,
   PanelLeftCloseIcon,
   PanelRightCloseIcon,
@@ -20,6 +22,8 @@ import { useSelectedLayoutSegment } from 'next/navigation';
 import posthog from 'posthog-js';
 import * as React from 'react';
 
+import ImportMarkdownDialog from '@/components/custom/import-markdown-dialog';
+import PasteMarkdownDialog from '@/components/custom/paste-markdown-dialog';
 import TooltipButton from '@/components/custom/tooltip-button';
 import GithubIcon from '@/components/icons/github';
 import SidebarDirectoryPlaceholder from '@/components/layout/sidebar-directory-placeholder';
@@ -59,6 +63,8 @@ export default function Sidebar({ documents, folders, isAuthenticated, isDirecto
   const segment = useSelectedLayoutSegment();
   const { setTheme, theme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
+  const [isImportMarkdownDialogOpen, setIsImportMarkdownDialogOpen] = React.useState(false);
+  const [isPasteMarkdownDialogOpen, setIsPasteMarkdownDialogOpen] = React.useState(false);
   const tooltipGroup = useTooltipGroup();
   const directoryTree = React.useMemo(() => {
     return buildDirectoryTree(folders, documents);
@@ -268,7 +274,7 @@ export default function Sidebar({ documents, folders, isAuthenticated, isDirecto
                         <ChevronDownIcon />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="start">
                       <DropdownMenuItem
                         className="space-x-2"
                         onClick={() => {
@@ -277,6 +283,32 @@ export default function Sidebar({ documents, folders, isAuthenticated, isDirecto
                       >
                         <FolderPlusIcon />
                         New Folder
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="flex-col items-start gap-0.5 space-x-0"
+                        onClick={() => {
+                          setIsImportMarkdownDialogOpen(true);
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <UploadIcon />
+                          Import Markdown
+                        </div>
+                        <p className="text-muted-foreground pl-6 text-xs">Select a .md file to create a new document</p>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="flex-col items-start gap-0.5 space-x-0"
+                        onClick={() => {
+                          setIsPasteMarkdownDialogOpen(true);
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <ClipboardPasteIcon />
+                          Paste Markdown
+                        </div>
+                        <p className="text-muted-foreground pl-6 text-xs">
+                          Paste markdown text to create a new document
+                        </p>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -350,6 +382,9 @@ export default function Sidebar({ documents, folders, isAuthenticated, isDirecto
           </Show>
         </div>
       </aside>
+
+      <ImportMarkdownDialog open={isImportMarkdownDialogOpen} onOpenChange={setIsImportMarkdownDialogOpen} />
+      <PasteMarkdownDialog open={isPasteMarkdownDialogOpen} onOpenChange={setIsPasteMarkdownDialogOpen} />
     </>
   );
 }

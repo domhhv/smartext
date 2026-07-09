@@ -16,6 +16,7 @@ import {
 import {
   FileIcon,
   TrashIcon,
+  UploadIcon,
   FolderIcon,
   FilePlusIcon,
   Settings2Icon,
@@ -24,11 +25,14 @@ import {
   FolderPlusIcon,
   FolderInputIcon,
   LoaderCircleIcon,
+  ClipboardPasteIcon,
   EllipsisVerticalIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 
+import ImportMarkdownDialog from '@/components/custom/import-markdown-dialog';
+import PasteMarkdownDialog from '@/components/custom/paste-markdown-dialog';
 import SidebarDocumentLinkButton from '@/components/layout/sidebar-document-link-button';
 import { useDocument } from '@/components/providers/document-provider';
 import { useSidebar } from '@/components/providers/sidebar-provider';
@@ -354,6 +358,8 @@ function SidebarFolderItem({ folder }: { folder: FolderNode }) {
     setFolderIdInteractedWith,
     toggleFolderExpansion,
   } = useDocument();
+  const [isImportMarkdownDialogOpen, setIsImportMarkdownDialogOpen] = React.useState(false);
+  const [isPasteMarkdownDialogOpen, setIsPasteMarkdownDialogOpen] = React.useState(false);
 
   const isExpanded = expandedFolderIds.has(folder.id);
   const isBeingRemoved = folderIdBeingRemoved === folder.id;
@@ -518,6 +524,32 @@ function SidebarFolderItem({ folder }: { folder: FolderNode }) {
                 <FolderPlusIcon />
                 New folder inside
               </DropdownMenuItem>
+              <DropdownMenuItem
+                className="flex-col items-start gap-0.5 space-x-0"
+                onClick={() => {
+                  setIsImportMarkdownDialogOpen(true);
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <UploadIcon />
+                  Import Markdown
+                </div>
+                <p className="text-muted-foreground pl-6 text-xs">Select a .md file to create a new document inside</p>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="flex-col items-start gap-0.5 space-x-0"
+                onClick={() => {
+                  setIsPasteMarkdownDialogOpen(true);
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <ClipboardPasteIcon />
+                  Paste Markdown
+                </div>
+                <p className="text-muted-foreground pl-6 text-xs">
+                  Paste markdown text to create a new document inside
+                </p>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
@@ -532,6 +564,17 @@ function SidebarFolderItem({ folder }: { folder: FolderNode }) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        <ImportMarkdownDialog
+          parentFolderId={folder.id}
+          open={isImportMarkdownDialogOpen}
+          onOpenChange={setIsImportMarkdownDialogOpen}
+        />
+        <PasteMarkdownDialog
+          parentFolderId={folder.id}
+          open={isPasteMarkdownDialogOpen}
+          onOpenChange={setIsPasteMarkdownDialogOpen}
+        />
 
         <CollapsibleContent>
           {hasChildren ? (

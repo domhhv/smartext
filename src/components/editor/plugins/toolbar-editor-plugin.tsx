@@ -1,11 +1,12 @@
 import { useUser } from '@clerk/nextjs';
 import { TOGGLE_LINK_COMMAND } from '@lexical/link';
-import { $convertToMarkdownString, $convertFromMarkdownString } from '@lexical/markdown';
+import { $convertToMarkdownString } from '@lexical/markdown';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { $patchStyleText } from '@lexical/selection';
 import { $isTableCellNode, INSERT_TABLE_COMMAND } from '@lexical/table';
 import * as Sentry from '@sentry/nextjs';
 import {
+  $getRoot,
   REDO_COMMAND,
   UNDO_COMMAND,
   HISTORIC_TAG,
@@ -30,15 +31,17 @@ import {
   RedoIcon,
   LinkIcon,
   SaveIcon,
+  CopyIcon,
   QuoteIcon,
   TableIcon,
   IndentIcon,
   ItalicIcon,
   EraserIcon,
-  UploadIcon,
   HeadingIcon,
   BaselineIcon,
   DownloadIcon,
+  FileTextIcon,
+  FileDownIcon,
   UnderlineIcon,
   PaintRollerIcon,
   ChevronDownIcon,
@@ -133,6 +136,7 @@ export default function ToolbarEditorPlugin() {
   const [isHeadingsDropdownOpen, setIsHeadingsDropdownOpen] = React.useState(false);
   const [isListsDropdownOpen, setIsListsDropdownOpen] = React.useState(false);
   const [isTextFormatDropdownOpen, setIsTextFormatDropdownOpen] = React.useState(false);
+  const [isExportDropdownOpen, setIsExportDropdownOpen] = React.useState(false);
   const [isTableSizePickerOpen, setIsTableSizePickerOpen] = React.useState(false);
   const [isCellBackgroundColorPickerOpen, setIsCellBackgroundColorPickerOpen] = React.useState(false);
   const [fontColor, setFontColor] = React.useState('');
@@ -475,8 +479,6 @@ export default function ToolbarEditorPlugin() {
     }
   }, [activeDocument, editor, openDocumentDialog]);
 
-  const markdownFileInputRef = React.useRef<HTMLInputElement>(null);
-
   const downloadEditorMarkdown = React.useCallback(() => {
     editor.read(() => {
       const markdown = $convertToMarkdownString(ENHANCED_LEXICAL_TRANSFORMERS, undefined, true);
@@ -493,36 +495,37 @@ export default function ToolbarEditorPlugin() {
     });
   }, [editor, activeDocument?.title]);
 
-  const importMarkdown = React.useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
+  const copyEditorMarkdown = React.useCallback(() => {
+    editor.read(() => {
+      const markdown = $convertToMarkdownString(ENHANCED_LEXICAL_TRANSFORMERS, undefined, true);
 
-      if (!file) {
-        return;
-      }
-
-      const reader = new FileReader();
-
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-
-        editor.update(() => {
-          $convertFromMarkdownString(content, ENHANCED_LEXICAL_TRANSFORMERS, undefined, true);
+      navigator.clipboard
+        .writeText(markdown)
+        .then(() => {
+          toast.success('Copied as Markdown');
+        })
+        .catch((error: unknown) => {
+          Sentry.captureException(error);
+          toast.error('Failed to copy', { description: getErrorMessage(error) });
         });
+    });
+  }, [editor]);
 
-        toast.success(`Imported "${file.name}" successfully`);
-      };
+  const copyEditorPlainText = React.useCallback(() => {
+    editor.read(() => {
+      const text = $getRoot().getTextContent();
 
-      reader.onerror = () => {
-        toast.error('Failed to read the file');
-      };
-
-      reader.readAsText(file);
-
-      event.target.value = '';
-    },
-    [editor]
-  );
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          toast.success('Copied as plain text');
+        })
+        .catch((error: unknown) => {
+          Sentry.captureException(error);
+          toast.error('Failed to copy', { description: getErrorMessage(error) });
+        });
+    });
+  }, [editor]);
 
   return (
     <TooltipProvider>
@@ -1111,34 +1114,38 @@ export default function ToolbarEditorPlugin() {
 
         <Separator orientation="vertical" className="h-6! shrink-0 self-center justify-self-center" />
 
-        <input
-          type="file"
-          className="hidden"
-          onChange={importMarkdown}
-          ref={markdownFileInputRef}
-          accept=".md,.markdown,text/markdown"
-        />
-
-        <ButtonGroup>
-          <TooltipButton
-            {...tooltipGroup.getTooltipProps()}
-            variant="ghost"
-            tooltip="Import Markdown"
-            onClick={() => {
-              markdownFileInputRef.current?.click();
-            }}
-          >
-            <UploadIcon />
-          </TooltipButton>
-          <TooltipButton
-            {...tooltipGroup.getTooltipProps()}
-            variant="ghost"
-            tooltip="Export as Markdown"
-            onClick={downloadEditorMarkdown}
-          >
-            <DownloadIcon />
-          </TooltipButton>
-        </ButtonGroup>
+        <DropdownMenu open={isExportDropdownOpen} onOpenChange={setIsExportDropdownOpen}>
+          <Tooltip delayDuration={tooltipGroup.getTooltipProps().delayDuration}>
+            <TooltipTrigger asChild onMouseEnter={tooltipGroup.getTooltipProps().onMouseEnter}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="secondary"
+                  aria-label="Export"
+                  className="shrink-0"
+                  disabled={isSavingActiveDocument || isEditorEmpty}
+                >
+                  <FileDownIcon />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent>Export</TooltipContent>
+          </Tooltip>
+          <DropdownMenuContent>
+            <DropdownMenuItem className="space-x-2" onClick={downloadEditorMarkdown}>
+              <DownloadIcon />
+              Download as Markdown
+            </DropdownMenuItem>
+            <DropdownMenuItem className="space-x-2" onClick={copyEditorMarkdown}>
+              <CopyIcon />
+              Copy as Markdown
+            </DropdownMenuItem>
+            <DropdownMenuItem className="space-x-2" onClick={copyEditorPlainText}>
+              <FileTextIcon />
+              Copy as Plain Text
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </TooltipProvider>
   );
