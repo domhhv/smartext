@@ -1,11 +1,10 @@
 'use client';
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import type { TableSelection } from '@lexical/table';
+import type { TableCellNode, TableSelection } from '@lexical/table';
 import {
   $mergeCells,
   $unmergeCell,
-  TableCellNode,
   getTableElement,
   $getNodeTriplet,
   $isTableCellNode,
@@ -246,24 +245,6 @@ export default function TableActionMenuPlugin({ anchor }: { anchor: HTMLElement 
       setIsMenuOpen(false);
     }
   }, [tableCellNode]);
-
-  React.useEffect(() => {
-    if (tableCellNode === null) {
-      return;
-    }
-
-    return editor.registerMutationListener(
-      TableCellNode,
-      (nodeMutations) => {
-        if (nodeMutations.get(tableCellNode.getKey()) === 'updated') {
-          editor.read('latest', () => {
-            setTableCellNode(tableCellNode.getLatest());
-          });
-        }
-      },
-      { skipInitialization: true }
-    );
-  }, [editor, tableCellNode]);
 
   function handleMenuOpenChange(open: boolean) {
     if (open) {
