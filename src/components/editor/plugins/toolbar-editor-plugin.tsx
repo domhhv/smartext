@@ -34,6 +34,7 @@ import {
   CopyIcon,
   QuoteIcon,
   TableIcon,
+  ImageIcon,
   IndentIcon,
   ItalicIcon,
   EraserIcon,
@@ -60,6 +61,7 @@ import { toast } from 'sonner';
 
 import EditorColorPicker from '@/components/custom/editor-color-picker';
 import FontSizeInput from '@/components/custom/font-size-input';
+import InsertImageDialog from '@/components/custom/insert-image-dialog';
 import Shortcut from '@/components/custom/shortcut';
 import TableSizePicker from '@/components/custom/table-size-picker';
 import TooltipButton from '@/components/custom/tooltip-button';
@@ -138,6 +140,7 @@ export default function ToolbarEditorPlugin() {
   const [isTextFormatDropdownOpen, setIsTextFormatDropdownOpen] = React.useState(false);
   const [isExportDropdownOpen, setIsExportDropdownOpen] = React.useState(false);
   const [isTableSizePickerOpen, setIsTableSizePickerOpen] = React.useState(false);
+  const [isInsertImageDialogOpen, setIsInsertImageDialogOpen] = React.useState(false);
   const [isCellBackgroundColorPickerOpen, setIsCellBackgroundColorPickerOpen] = React.useState(false);
   const [fontColor, setFontColor] = React.useState('');
   const [backgroundColor, setBackgroundColor] = React.useState('');
@@ -713,6 +716,19 @@ export default function ToolbarEditorPlugin() {
             />
           </PopoverContent>
         </Popover>
+
+        <TooltipButton
+          {...tooltipGroup.getTooltipProps()}
+          variant="ghost"
+          tooltip="Insert image"
+          onClick={() => {
+            setIsInsertImageDialogOpen(true);
+          }}
+        >
+          <ImageIcon />
+        </TooltipButton>
+
+        <InsertImageDialog open={isInsertImageDialogOpen} onOpenChange={setIsInsertImageDialogOpen} />
 
         <Separator className="h-6!" orientation="vertical" />
 

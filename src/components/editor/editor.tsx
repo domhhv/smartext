@@ -18,6 +18,7 @@ import posthog from 'posthog-js';
 import * as React from 'react';
 
 import FloatingLinkEditorPlugin from '@/components/editor/plugins/floating-link-editor-plugin';
+import ImagesPlugin from '@/components/editor/plugins/images-plugin';
 import ShortcutsPlugin from '@/components/editor/plugins/shortcuts-plugin';
 import TableActionMenuPlugin from '@/components/editor/plugins/table-action-menu-plugin';
 import TableCellResizerPlugin from '@/components/editor/plugins/table-cell-resizer-plugin';
@@ -138,6 +139,7 @@ export default function Editor() {
         }
       />
       <ListPlugin />
+      <ImagesPlugin />
       <HistoryPlugin />
       <ShortcutsPlugin />
       <CheckListPlugin />

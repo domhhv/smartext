@@ -610,7 +610,7 @@ export default function DocumentProvider({ children, documents, folders, isAuthe
           closeActiveDocument();
         }
 
-        await removeFolder(folderId);
+        await removeFolder(folderId, [...removedFolderIds]);
         posthog.capture('folder_removed', { folderId });
         toast.success('Folder removed successfully');
 

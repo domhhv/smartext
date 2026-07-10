@@ -13,7 +13,7 @@ import type { JSX } from 'react';
 
 import ImageComponent from './image-component';
 
-type ImagePayload = {
+export type ImagePayload = {
   altText: string;
   height?: 'inherit' | number;
   key?: NodeKey;
@@ -115,6 +115,12 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return this.__altText;
   }
 
+  setWidthAndHeight(width: 'inherit' | number, height: 'inherit' | number): void {
+    const writable = this.getWritable();
+    writable.__width = width;
+    writable.__height = height;
+  }
+
   createDOM(config: EditorConfig): HTMLElement {
     const span = document.createElement('span');
     const theme = config.theme;
@@ -134,9 +140,11 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   decorate(): JSX.Element {
     return (
       <ImageComponent
+        resizable
         src={this.__src}
         width={this.__width}
         height={this.__height}
+        nodeKey={this.getKey()}
         altText={this.__altText}
         maxWidth={this.__maxWidth}
       />
