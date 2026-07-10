@@ -1,34 +1,34 @@
 {
-  "generatedAt": "2026-07-09T21:02:39.408Z",
+  "generatedAt": "2026-07-10T20:43:25.322Z",
   "routes": {
     "/_not-found": {
-      "gzip": 895092,
-      "raw": 2843592
+      "gzip": 895062,
+      "raw": 2843594
     },
     "/_global-error": {
-      "gzip": 894271,
-      "raw": 2841084
+      "gzip": 894241,
+      "raw": 2841086
     },
     "/account/[[...account]]": {
-      "gzip": 904256,
+      "gzip": 904227,
       "raw": 2867812
     },
     "/login/[[...login]]": {
-      "gzip": 894455,
-      "raw": 2841472
+      "gzip": 894423,
+      "raw": 2841474
     },
     "/": {
-      "gzip": 1214208,
-      "raw": 3899504
+      "gzip": 1214176,
+      "raw": 3899506
     },
     "/register/[[...register]]": {
-      "gzip": 894453,
-      "raw": 2841472
+      "gzip": 894422,
+      "raw": 2841474
     }
   },
   "unit": "bytes",
   "shared": {
-    "gzip": 893940,
-    "raw": 2840555
+    "gzip": 893910,
+    "raw": 2840557
   }
 }
