@@ -58,7 +58,7 @@
     "prepare": "husky",
     "prettier:check": "prettier --check .",
     "prettier:write": "prettier --write .",
-    "sort-package-json:check": "sort-package-json --check",
+    "sort-package-json:check": "sort-package-json --check package",
     "sort-package-json:write": "sort-package-json",
     "start": "next start",
     "typecheck": "tsc --noEmit"
