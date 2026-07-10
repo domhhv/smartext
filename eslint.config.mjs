@@ -124,7 +124,7 @@ const javascriptRules = {
 
 export default defineConfig(
   [
-    globalIgnores(['node_modules/**', '.next/**', 'out/**', 'build/**', 'next-env.d.ts']),
+    globalIgnores(['node_modules/**', '.next/**', 'out/**', 'build/**', 'next-env.d.ts', '.agents/**']),
     lexical.configs['flat/recommended'],
     {
       extends: [js.configs.recommended, tsEslint.configs.recommended, switchCase.configs.recommended],
