@@ -1,11 +1,13 @@
 'use server';
 
+import { auth } from '@clerk/nextjs/server';
 import camelcaseKeys from 'camelcase-keys';
 import decamelizeKeys from 'decamelize-keys';
 import { revalidatePath } from 'next/cache';
 
 import type { DocumentsInsert, DocumentsUpdate } from '@/lib/models/document.model';
 import createClerkSupabaseClientSsr from '@/lib/utils/create-clerk-supabase-ssr-client';
+import removeStoragePrefix from '@/lib/utils/remove-storage-prefix';
 
 export async function createDocument(body: DocumentsInsert) {
   const client = await createClerkSupabaseClientSsr();
@@ -28,6 +30,12 @@ export async function removeDocument(documentId: string) {
 
   if (error) {
     throw error;
+  }
+
+  const { userId } = await auth();
+
+  if (userId) {
+    await removeStoragePrefix(client, `${userId}/${documentId}`);
   }
 
   revalidatePath('/');

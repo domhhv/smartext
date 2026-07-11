@@ -50,7 +50,7 @@ const LEXICAL_EDITOR_EXTENSION = defineExtension({
   },
   theme: {
     hr: 'border-t border-slate-200 my-4',
-    image: 'my-4',
+    image: 'relative my-4 inline-block max-w-full select-none',
     link: 'text-sky-500 underline hover:text-blue-600',
     paragraph: 'my-1 text-base leading-5',
     quote: 'italic text-slate-500 border-l-4 border-slate-500 pl-2',

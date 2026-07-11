@@ -1,9 +1,28 @@
-import { useState } from 'react';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { useLexicalEditable } from '@lexical/react/useLexicalEditable';
+import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection';
+import type { NodeKey } from 'lexical';
+import {
+  $getNodeByKey,
+  $getSelection,
+  CLICK_COMMAND,
+  mergeRegister,
+  $isNodeSelection,
+  DRAGSTART_COMMAND,
+  COMMAND_PRIORITY_LOW,
+} from 'lexical';
+import * as React from 'react';
+
+import { $isImageNode } from '@/components/editor/nodes/image-node';
+import ImageResizer from '@/components/editor/nodes/image-resizer';
+import cn from '@/lib/utils/cn';
 
 type ImageComponentProps = {
   altText: string;
   height: 'inherit' | number;
   maxWidth: number;
+  nodeKey: NodeKey;
+  resizable: boolean;
   src: string;
   width: 'inherit' | number;
 };
@@ -31,8 +50,13 @@ function BrokenImage() {
   );
 }
 
-function LazyImage({ altText, height, maxWidth, src, width }: ImageComponentProps) {
-  const [hasError, setHasError] = useState(false);
+type LazyImageProps = Omit<ImageComponentProps, 'nodeKey' | 'resizable'> & {
+  imageRef: { current: HTMLImageElement | null };
+  isFocused: boolean;
+};
+
+function LazyImage({ altText, height, imageRef, isFocused, maxWidth, src, width }: LazyImageProps) {
+  const [hasError, setHasError] = React.useState(false);
 
   if (hasError) {
     return <BrokenImage />;
@@ -42,25 +66,123 @@ function LazyImage({ altText, height, maxWidth, src, width }: ImageComponentProp
     <img
       src={src}
       alt={altText}
+      ref={imageRef}
       loading="lazy"
       draggable={false}
-      className="h-auto max-w-full rounded-lg"
       onError={() => {
         return setHasError(true);
       }}
+      className={cn('h-auto max-w-full rounded-lg', isFocused && 'ring-primary ring-2')}
       style={{
         height: height === 'inherit' ? 'auto' : `${height}px`,
-        maxWidth: `${maxWidth}px`,
+        maxWidth: width === 'inherit' ? `${maxWidth}px` : undefined,
         width: width === 'inherit' ? '100%' : `${width}px`,
       }}
     />
   );
 }
 
-export default function ImageComponent(props: ImageComponentProps) {
+export default function ImageComponent({
+  altText,
+  height,
+  maxWidth,
+  nodeKey,
+  resizable,
+  src,
+  width,
+}: ImageComponentProps) {
+  const imageRef = React.useRef<HTMLImageElement | null>(null);
+  const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey);
+  const [isResizing, setIsResizing] = React.useState(false);
+  const [editor] = useLexicalComposerContext();
+  const isEditable = useLexicalEditable();
+
+  const isInNodeSelection = React.useMemo(() => {
+    return (
+      isSelected &&
+      editor.read(() => {
+        const selection = $getSelection();
+
+        return $isNodeSelection(selection) && selection.has(nodeKey);
+      })
+    );
+  }, [editor, isSelected, nodeKey]);
+
+  const onClick = React.useCallback(
+    (event: MouseEvent) => {
+      if (isResizing) {
+        return true;
+      }
+
+      if (event.target === imageRef.current) {
+        if (event.shiftKey) {
+          setSelected(!isSelected);
+        } else {
+          clearSelection();
+          setSelected(true);
+        }
+
+        return true;
+      }
+
+      return false;
+    },
+    [isResizing, isSelected, setSelected, clearSelection]
+  );
+
+  React.useEffect(() => {
+    return mergeRegister(
+      editor.registerCommand(CLICK_COMMAND, onClick, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(
+        DRAGSTART_COMMAND,
+        (event) => {
+          if (event.target === imageRef.current) {
+            event.preventDefault();
+
+            return true;
+          }
+
+          return false;
+        },
+        COMMAND_PRIORITY_LOW
+      )
+    );
+  }, [editor, onClick]);
+
+  function onResizeStart() {
+    setIsResizing(true);
+  }
+
+  function onResizeEnd(nextWidth: 'inherit' | number, nextHeight: 'inherit' | number) {
+    setTimeout(() => {
+      setIsResizing(false);
+    }, 200);
+
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+
+      if ($isImageNode(node)) {
+        node.setWidthAndHeight(nextWidth, nextHeight);
+      }
+    });
+  }
+
+  const isFocused = (isSelected || isResizing) && isEditable;
+
   return (
-    <div className="relative my-4">
-      <LazyImage {...props} />
-    </div>
+    <>
+      <LazyImage
+        src={src}
+        width={width}
+        height={height}
+        altText={altText}
+        imageRef={imageRef}
+        maxWidth={maxWidth}
+        isFocused={isFocused}
+      />
+      {resizable && isInNodeSelection && isFocused && (
+        <ImageResizer editor={editor} imageRef={imageRef} onResizeEnd={onResizeEnd} onResizeStart={onResizeStart} />
+      )}
+    </>
   );
 }

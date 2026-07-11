@@ -26,7 +26,11 @@
       "Bash(gh pr *)",
       "Bash(npm install *)",
       "mcp__chrome-devtools__hover",
-      "mcp__chrome-devtools__press_key"
+      "mcp__chrome-devtools__press_key",
+      "Bash(npx shadcn@latest add *)",
+      "Skill(clerk-webhooks)",
+      "Skill(clerk-webhooks:*)",
+      "mcp__chrome-devtools__fill"
     ],
     "deny": [],
     "ask": []
