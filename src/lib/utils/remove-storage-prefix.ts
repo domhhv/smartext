@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@db-types';
@@ -52,29 +53,9 @@ export default async function removeStoragePrefix(client: SupabaseClient<Databas
         throw error;
       }
     }
-import * as Sentry from '`@sentry/nextjs`';
-
-const IMAGES_BUCKET = 'images';
-const PAGE_SIZE = 100;
-
-async function listAllFilePaths(client: SupabaseClient<Database>, prefix: string): Promise<string[]> {
-  // ...
-}
-
-export default async function removeStoragePrefix(client: SupabaseClient<Database>, prefix: string) {
-  try {
-    const paths = await listAllFilePaths(client, prefix);
-
-    for (let i = 0; i < paths.length; i += PAGE_SIZE) {
-      const { error } = await client.storage.from(IMAGES_BUCKET).remove(paths.slice(i, i + PAGE_SIZE));
-
-      if (error) {
-        throw error;
-      }
-    }
   } catch (error) {
+    Sentry.captureException(error);
     console.error(`Error removing storage prefix "${prefix}": `, error);
     Sentry.captureException(error, { tags: { prefix } });
   }
-}
 }
