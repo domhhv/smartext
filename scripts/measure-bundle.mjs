@@ -21,6 +21,7 @@ const gzCache = new Map();
 
 function rawSize(file) {
   if (rawCache.has(file)) return rawCache.get(file);
+  // eslint-disable-next-line no-useless-assignment
   let size = 0;
 
   try {
@@ -36,6 +37,7 @@ function rawSize(file) {
 
 function gzSize(file) {
   if (gzCache.has(file)) return gzCache.get(file);
+  // eslint-disable-next-line no-useless-assignment
   let size = 0;
 
   try {

@@ -169,6 +169,7 @@ export function clearFormatting(editor: LexicalEditor) {
             nearestBlockElement.setIndent(0);
           }
 
+          // eslint-disable-next-line no-useless-assignment
           node = textNode;
         } else if ($isHeadingNode(node) || $isQuoteNode(node)) {
           node.replace($createParagraphNode(), true);
