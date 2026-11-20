@@ -80,7 +80,7 @@ Key files for AI functionality:
 
 ### Environment Requirements
 
-- **Node.js**: 24.18.0
+- **Node.js**: 24.22.3
 - **npm**: 11.16.0
 
 ### Code Quality Setup

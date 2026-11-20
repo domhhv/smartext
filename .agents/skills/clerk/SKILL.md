@@ -1,15 +1,9 @@
 ---
 name: clerk
-description: Clerk authentication router. Use when user asks about Clerk CLI operations,
-  adding authentication, setting up Clerk, custom sign-in flows, Swift or native iOS
-  auth, native Android auth, Next.js patterns, React patterns, Vue patterns, Nuxt
-  patterns, Astro patterns, TanStack Start patterns, Expo patterns, React Router
-  patterns, Chrome Extension patterns, organizations, billing, subscriptions, payments,
-  pricing, plans, seat-based pricing, feature entitlements, syncing users, or testing.
-  Automatically routes to the specific skill based on their task.
+description: Clerk authentication router. Use when user asks about Clerk CLI operations, adding authentication, setting up Clerk, custom sign-in flows, Swift or native iOS auth, native Android auth, Next.js patterns, React patterns, Vue patterns, Nuxt patterns, Astro patterns, TanStack Start patterns, Expo patterns, React Router patterns, Chrome Extension patterns, organizations, billing, subscriptions, payments, pricing, plans, seat-based pricing, feature entitlements, syncing users, migrating or importing users from another auth provider, testing, impersonating a user, testing webhooks locally, or reading Application Logs to debug a sign-in or sign-up. Automatically routes to the specific skill based on their task.
 license: MIT
 metadata:
-  version: 2.0.0
+  version: 2.0.2
 ---
 
 # Clerk Skills Router
@@ -37,15 +31,27 @@ All skills are written for the current SDK. When something differs in Core 2, it
 **Adding Clerk to your project** → Use `clerk-setup`
 
 - Framework detection and quickstart
-- Environment setup, API keys, Keyless flow
-- Migration from other auth providers
+- Environment setup, API keys, temporary dev keys via `clerk init`
+- Planning a switch from another auth provider
+- Native iOS and macOS apps in Xcode, through the iOS setup prompt
+- Native Android apps with Gradle, through the Android setup prompt
+
+**Migrating users into Clerk** → Use `clerk-migrate`
+
+- Exporting users from Auth0, Supabase, Firebase, Auth.js, Better Auth, WorkOS, or Clerk
+- Checking and importing them with `clerk migrate import`, and undoing a run with `clerk migrate undo`
+- Writing a source for a platform with no built-in
+- Development → production instance migrations
 
 **Operating Clerk from the CLI** → Use `clerk-cli`
 
 - Auth, linking, `doctor`, and environment pulls
 - User, org, session, app, and instance management
-- Backend and Platform API calls through `clerk api`
+- Impersonating a user (`clerk impersonate`) and local webhook testing (`clerk webhooks listen`)
+- Feature toggles (`clerk enable orgs`, `clerk enable billing`)
+- Backend, Platform, and Frontend API calls through `clerk api`
 - Deploy handoff and deploy status verification
+- Reading Application Logs (`clerk logs`) to debug sign-ins, sign-ups, and user changes
 
 **Custom sign-in/sign-up UI** → Use `clerk-custom-ui`
 
@@ -94,7 +100,7 @@ All skills are written for the current SDK. When something differs in Core 2, it
 
 - Server functions with auth
 - Route protection via loaders
-- Vinxi server integration
+- Vite plugin and request middleware setup
 
 **Expo / React Native auth** → Use `clerk-expo`
 
@@ -138,15 +144,17 @@ All skills are written for the current SDK. When something differs in Core 2, it
 
 **Swift / native iOS auth** → Use `clerk-swift`
 
-- Native iOS Swift and SwiftUI projects
-- ClerkKit and ClerkKitUI implementation guidance
+- Sign-in UI in native iOS and macOS Swift and SwiftUI projects
+- ClerkKitUI prebuilt views and custom ClerkKit flows
 - Source-driven patterns from `clerk-ios`
+- If Clerk isn't set up yet, set it up first through `clerk-setup`
 
 **Android / native mobile auth** → Use `clerk-android`
 
 - Native Android Kotlin and Jetpack Compose projects
 - `clerk-android-api` and `clerk-android-ui` implementation guidance
 - Source-driven patterns from `clerk-android`
+- If Clerk isn't set up yet, set it up first through `clerk-setup`
 - Do not use for Expo or React Native projects
 
 **Backend REST API** → Use `clerk-backend-api`
@@ -161,6 +169,7 @@ If you know your task, you can directly access:
 
 - `/clerk-setup` - Framework setup
 - `/clerk-cli` - CLI operations and Clerk resource management
+- `/clerk-migrate` - Migrating users in from another auth provider
 - `/clerk-custom-ui` - Custom flows & appearance
 - `/clerk-nextjs-patterns` - Next.js patterns
 - `/clerk-react-patterns` - React patterns
@@ -175,7 +184,7 @@ If you know your task, you can directly access:
 - `/clerk-billing` - Billing & subscriptions
 - `/clerk-webhooks` - Webhooks
 - `/clerk-testing` - Testing
-- `/clerk-swift` - Swift/native iOS
+- `/clerk-swift` - Swift/native iOS and macOS UI
 - `/clerk-android` - Native Android
 - `/clerk-backend-api` - Backend REST API
 

@@ -9,7 +9,7 @@ on:
       - main
 
 env:
-  NODE_VERSION: 24.18.0
+  NODE_VERSION: 24.22.3
 
 # Cancel superseded runs on the same ref (e.g. rapid pushes to a PR).
 concurrency:
@@ -27,13 +27,13 @@ jobs:
       contents: write # commit the baseline on push to main
       pull-requests: write # post the sticky comment on PRs
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           token: ${{ secrets.BASELINE_PAT }}
           # Full history so `git show origin/main:bundle-sizes.json` works on PRs.
           fetch-depth: 0
 
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -69,7 +69,7 @@ jobs:
 
       - name: Post sticky PR comment
         if: github.event_name == 'pull_request'
-        uses: marocchino/sticky-pull-request-comment@v2.9.4
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         with:
           header: first-load-js
           path: bundle-report.md

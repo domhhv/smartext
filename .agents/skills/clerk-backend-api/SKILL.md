@@ -66,7 +66,7 @@ curl -s -X POST "https://api.clerk.com/v1/organizations/${ORG_ID}/invitations" \
 ### SDK equivalent (for Next.js / TypeScript projects with `@clerk/nextjs` or `@clerk/backend`)
 
 ```typescript
-import { clerkClient } from '@clerk/nextjs/server';
+import { clerkClient } from '@clerk/nextjs/server'
 // OR if using @clerk/backend directly:
 // import { createClerkClient } from '@clerk/backend'
 // const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
@@ -75,25 +75,25 @@ import { clerkClient } from '@clerk/nextjs/server';
 const org = await clerkClient.organizations.createOrganization({
   name: 'Acme Corp',
   createdBy: userId, // required — the ID of the user creating the org
-});
+})
 
 // Step 2: Invite member to the org
 const invitation = await clerkClient.organizations.createOrganizationInvitation({
   organizationId: org.id,
   emailAddress: 'user@example.com',
   role: 'org:admin', // or 'org:member'
-});
+})
 ```
 
 ### Update user metadata
 
 **Always explain the three metadata types before asking which to use:**
 
-| Type    | Field              | Readable by     | Writable by     | Use for                                                                       |
-| ------- | ------------------ | --------------- | --------------- | ----------------------------------------------------------------------------- |
-| Public  | `public_metadata`  | Client + Server | **Server only** | Plan tier, roles, feature flags the frontend reads                            |
-| Private | `private_metadata` | **Server only** | **Server only** | Stripe IDs, compliance flags, internal identifiers                            |
-| Unsafe  | `unsafe_metadata`  | Client + Server | Client + Server | Ephemeral UI state, onboarding steps (client-writable — avoid sensitive data) |
+| Type | Field | Readable by | Writable by | Use for |
+| --- | --- | --- | --- | --- |
+| Public | `public_metadata` | Client + Server | **Server only** | Plan tier, roles, feature flags the frontend reads |
+| Private | `private_metadata` | **Server only** | **Server only** | Stripe IDs, compliance flags, internal identifiers |
+| Unsafe | `unsafe_metadata` | Client + Server | Client + Server | Ephemeral UI state, onboarding steps (client-writable — avoid sensitive data) |
 
 **For `plan: 'pro'` and `onboarded: true` — use `public_metadata`** (frontend-readable, server-writable):
 
@@ -108,14 +108,14 @@ curl -s -X PATCH "https://api.clerk.com/v1/users/${USER_ID}" \
 **SDK equivalent:**
 
 ```typescript
-import { clerkClient } from '@clerk/nextjs/server';
+import { clerkClient } from '@clerk/nextjs/server'
 // OR: import { createClerkClient } from '@clerk/backend'
 
 await clerkClient.users.updateUser(userId, {
   publicMetadata: { plan: 'pro', onboarded: true }, // readable by client, writable server-only
   // privateMetadata: { stripeId: 'cus_xxx' },         // server-only read AND write
   // unsafeMetadata: { step: 'welcome' },              // client-writable, avoid sensitive data
-});
+})
 ```
 
 **Note:** REST API uses `snake_case` (`public_metadata`). SDK uses `camelCase` (`publicMetadata`).
@@ -150,8 +150,7 @@ curl -s -X DELETE "https://api.clerk.com/v1/users/${USER_ID}" \
 
 ## Clerk Backend API — Full Endpoint Reference
 
-Base URL: `https://api.clerk.com/v1`
-Auth: `Authorization: Bearer $CLERK_SECRET_KEY` on every request.
+Base URL: `https://api.clerk.com/v1` Auth: `Authorization: Bearer $CLERK_SECRET_KEY` on every request.
 
 ### Users
 
@@ -216,7 +215,7 @@ Returns: OrganizationInvitation object
 
 ## How to execute requests
 
-**ALWAYS execute requests with direct `curl` commands.** Use the spec-extraction scripts (`api-specs-context.sh`, `extract-tags.js`, `extract-endpoint-detail.sh`) to discover endpoints, but make actual API calls with `curl`. Do NOT use `scripts/execute-request.sh` — it's a local dev helper, not for agent use.
+**ALWAYS execute requests with direct `curl` commands.** Use the spec-extraction scripts (`api-specs-context.sh`, `extract-tags.js`, `extract-endpoint-detail.sh`) to discover endpoints, but make actual API calls with `curl`.
 
 Template for GET requests:
 
@@ -268,7 +267,7 @@ Use the output to determine the latest version and available tags.
 - For write operations (POST/PUT/PATCH/DELETE), check `CLERK_BAPI_SCOPES` before attempting the request. If missing or insufficient, ask the user upfront. Do NOT attempt and fail — ask before executing. This check is MANDATORY.
 - For metadata operations, always explain all three types (public, private, unsafe) and recommend the appropriate one.
 - Pagination: always use `limit` + `offset` and mention that results may be paginated for large datasets.
-- Use direct curl commands for all API calls — never use `scripts/execute-request.sh`.
+- Use direct curl commands for all API calls.
 
 ---
 
@@ -296,7 +295,7 @@ Use the output to determine the latest version and available tags.
 Wrong:
 
 ```typescript
-await clerkClient.users.updateUser(userId, { publicMetadata: { newField: 'value' } });
+await clerkClient.users.updateUser(userId, { publicMetadata: { newField: 'value' } })
 ```
 
 This DELETES all other `publicMetadata` fields.
@@ -304,10 +303,10 @@ This DELETES all other `publicMetadata` fields.
 Right:
 
 ```typescript
-const user = await clerkClient.users.getUser(userId);
+const user = await clerkClient.users.getUser(userId)
 await clerkClient.users.updateUser(userId, {
   publicMetadata: { ...user.publicMetadata, newField: 'value' },
-});
+})
 ```
 
 ---
@@ -316,12 +315,12 @@ await clerkClient.users.updateUser(userId, {
 
 Determine the active mode based on the user prompt in [Options context](#options-context):
 
-| Mode      | Trigger                                                                                     | Behavior                             |
-| --------- | ------------------------------------------------------------------------------------------- | ------------------------------------ |
-| `help`    | Prompt is empty, or contains only `help` / `-h` / `--help`                                  | Print usage examples (step 0)        |
-| `browse`  | Prompt is `tags`, or a tag name (e.g. `Users`)                                              | List all tags or endpoints for a tag |
-| `execute` | Specific endpoint (e.g. `GET /users`) or natural language action (e.g. "get user john_doe") | Look up endpoint, execute request    |
-| `detail`  | Endpoint + `help` / `-h` / `--help` (e.g. `GET /users help`)                                | Show endpoint schema, don't execute  |
+| Mode | Trigger | Behavior |
+| --- | --- | --- |
+| `help` | Prompt is empty, or contains only `help` / `-h` / `--help` | Print usage examples (step 0) |
+| `browse` | Prompt is `tags`, or a tag name (e.g. `Users`) | List all tags or endpoints for a tag |
+| `execute` | Specific endpoint (e.g. `GET /users`) or natural language action (e.g. "get user john_doe") | Look up endpoint, execute request |
+| `detail` | Endpoint + `help` / `-h` / `--help` (e.g. `GET /users help`) | Show endpoint schema, don't execute |
 
 ---
 
@@ -424,7 +423,7 @@ curl -s https://raw.githubusercontent.com/clerk/openapi-specs/main/bapi/${versio
 1. Run the **mandatory checks** from the CRITICAL section above.
 2. Identify required and optional parameters from the spec (step 3) or FAST PATH.
 3. Ask the user for any required path/query/body parameters that weren't provided.
-4. Build and execute a **direct curl command** (see How to execute requests above). Do NOT use `scripts/execute-request.sh`.
+4. Build and execute a **direct curl command** (see How to execute requests above).
 5. Parse the JSON response and display it clearly. Extract and summarize key fields for the user.
 
 **Example — list users and parse response:**

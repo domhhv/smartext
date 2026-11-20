@@ -5,8 +5,8 @@
 import path from 'path';
 
 const config = {
+  './package.json': ['npm run sort-package-json:check', 'npm run prettier:check'],
   '*.{md,js,ts,tsx}': ['npm run eslint:check', 'npm run prettier:check'],
-  '**/package.json': ['npm run sort-package-json:check', 'npm run prettier:check'],
   '*.{ts,tsx}': () => {
     return 'npm run typecheck';
   },

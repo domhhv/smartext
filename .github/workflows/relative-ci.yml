@@ -13,10 +13,10 @@ jobs:
       !contains(github.event.pull_request.body, '[skip relative-ci]')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.0
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24.18.0
+          node-version: 24.22.3
 
       - name: Install dependencies
         run: npm ci
@@ -25,12 +25,12 @@ jobs:
         run: npm run build:webpack
 
       - name: Upload webpack stats artifact
-        uses: relative-ci/agent-upload-artifact-action@v2.0.0
+        uses: relative-ci/agent-upload-artifact-action@a2b5741b4f7e6a989c84ec1a3059696b23c152e5 # v2.0.0
         with:
           webpackStatsFile: ./webpack-stats.json
 
       - name: Send bundle stats and build information to RelativeCI
-        uses: relative-ci/agent-action@v3.2.3
+        uses: relative-ci/agent-action@711f3a8fa1b928e6afde280011110c9b0a224a60 # v3.2.4
         with:
           key: ${{ secrets.RELATIVE_CI_KEY }}
           token: ${{ secrets.GITHUB_TOKEN }}

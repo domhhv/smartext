@@ -45,12 +45,12 @@ export async function POST(req: Request) {
   const provider = providerName === 'openai' ? createOpenAI({ apiKey }) : createAnthropic({ apiKey });
 
   const result = streamText({
+    instructions: wrapEditorPrompt(editorMarkdownContent, editorRootChildren),
     messages: await convertToModelMessages(messages),
     model: provider(model),
     stopWhen: stepCountIs(5),
-    system: wrapEditorPrompt(editorMarkdownContent, editorRootChildren),
     tools,
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       recordInputs: true,
       recordOutputs: true,
