@@ -6,7 +6,6 @@ if (!process.env.SENTRY_DSN) {
   Sentry.init({
     debug: false,
     dsn: process.env.SENTRY_DSN,
-    enableLogs: true,
     tracesSampleRate: 1,
     integrations: [
       Sentry.vercelAIIntegration({

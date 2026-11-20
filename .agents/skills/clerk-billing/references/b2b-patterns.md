@@ -6,9 +6,12 @@ B2B billing in Clerk attaches subscriptions to **organizations**, not individual
 
 > **Create the plan as an Organization Plan, not a User Plan.** Use [Dashboard → Billing → Plans](https://dashboard.clerk.com/last-active?path=billing/plans) (Organization Plans tab) or `clerk config patch` with `billing.plans`. Slugs are scoped per type. A `team` plan registered under User Plans will not appear in `<PricingTable for="organization" />`, and vice versa. Plan type cannot be changed after creation, recreate if misplaced.
 
+> **Cache Components:** With `cacheComponents: true` (the `create-next-app` default), `next build` fails on request data read outside `<Suspense>`. The Next.js pages below follow the matching shapes: a page that gates its render with `redirect()` gets a `loading.tsx` next to it, a page that uses `auth()` to render data reads it in an async child inside `<Suspense>`, and catch-all `<UserProfile />` and `<OrganizationProfile />` pages render inside `<Suspense>`. See [Read auth data inside Suspense](https://clerk.com/docs/guides/development/rendering-modes#read-auth-data-inside-suspense) and [Prebuilt components on catch-all routes](https://clerk.com/docs/guides/development/rendering-modes#prebuilt-components-on-catch-all-routes).
+
 ## Core Pattern: Org-Level Plan Check
 
 ```typescript
+// app/team/page.tsx
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 
@@ -24,6 +27,13 @@ export default async function TeamDashboard() {
 	}
 
 	return <TeamFeatures />
+}
+```
+
+```tsx
+// app/team/loading.tsx
+export default function Loading() {
+  return <p>Loading...</p>
 }
 ```
 
@@ -47,10 +57,16 @@ No custom seat-counting code is needed. Read the active plan with `has({ plan: '
 Use `<OrganizationProfile />` for the org account billing UI. It renders the active org plan, members, invitations, and the upgrade / cancellation flow scoped to the active organization, with admin-only access to billing actions enforced by Clerk:
 
 ```tsx
-import { OrganizationProfile } from '@clerk/nextjs';
+// app/org-account/[[...org-account]]/page.tsx
+import { OrganizationProfile } from '@clerk/nextjs'
+import { Suspense } from 'react'
 
 export default function OrgAccountPage() {
-  return <OrganizationProfile />;
+  return (
+    <Suspense>
+      <OrganizationProfile />
+    </Suspense>
+  )
 }
 ```
 
@@ -60,9 +76,9 @@ Organization Plans configured in Dashboard → Billing → Plans automatically a
 
 ```typescript
 if (evt.type === 'subscription.created') {
-  const { id, payer, items, status } = evt.data;
+  const { id, payer, items, status } = evt.data
   if (payer.organization_id) {
-    const plan = items[0]?.plan?.slug;
+    const plan = items[0]?.plan?.slug
     await db.orgSubscriptions.upsert({
       where: { orgId: payer.organization_id },
       create: {
@@ -72,18 +88,18 @@ if (evt.type === 'subscription.created') {
         status,
       },
       update: { plan, subscriptionId: id, status },
-    });
+    })
   }
 }
 
 if (evt.type === 'subscription.updated') {
-  const { id, payer, items, status } = evt.data;
+  const { id, payer, items, status } = evt.data
   if (payer.organization_id) {
-    const plan = items[0]?.plan?.slug;
+    const plan = items[0]?.plan?.slug
     await db.orgSubscriptions.update({
       where: { orgId: payer.organization_id },
       data: { plan, status },
-    });
+    })
   }
 }
 ```
@@ -107,11 +123,11 @@ Define these via Dashboard → Billing → Plans → **Organization Plans** tab 
 
 ```typescript
 // WRONG, user has no active org, has() checks user subscription
-const { has } = await auth();
-if (!has({ plan: 'org:team' })) redirect('/billing');
+const { has } = await auth()
+if (!has({ plan: 'org:team' })) redirect('/billing')
 
 // CORRECT, check orgId first
-const { orgId, has } = await auth();
-if (!orgId) redirect('/sign-in');
-if (!has({ plan: 'org:team' })) redirect('/billing');
+const { orgId, has } = await auth()
+if (!orgId) redirect('/sign-in')
+if (!has({ plan: 'org:team' })) redirect('/billing')
 ```

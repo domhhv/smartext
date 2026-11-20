@@ -1,5 +1,6 @@
 import { CodeNode } from '@lexical/code-core';
 import { HorizontalRuleNode, HorizontalRuleExtension } from '@lexical/extension';
+import { HistoryExtension } from '@lexical/history';
 import { LinkNode, AutoLinkNode } from '@lexical/link';
 import { ListNode, ListItemNode } from '@lexical/list';
 import { QuoteNode, HeadingNode } from '@lexical/rich-text';
@@ -11,7 +12,7 @@ import { ImageNode } from '@/components/editor/nodes/image-node';
 import getErrorMessage from '@/lib/utils/get-error-message';
 
 const LEXICAL_EDITOR_EXTENSION = defineExtension({
-  dependencies: [HorizontalRuleExtension, TableExtension],
+  dependencies: [HistoryExtension, HorizontalRuleExtension, TableExtension],
   name: 'MyEditor',
   namespace: 'MyEditor',
   nodes() {

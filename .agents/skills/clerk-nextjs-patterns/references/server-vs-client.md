@@ -4,39 +4,52 @@
 
 ```tsx
 // WRONG
-const { userId } = auth(); // undefined!
+const { userId } = auth() // undefined!
 
 // CORRECT
-const { userId } = await auth();
+const { userId } = await auth()
 ```
 
 ## When to Use
 
-- **Server Components** - Initial load, SEO, DB queries
+- **Server Components** - Initial load, SEO, DB queries. Render the ones that call `auth()` or `currentUser()` inside `<Suspense>`: with Cache Components (`cacheComponents: true`, the `create-next-app` default), `next build` fails on request data read outside a `<Suspense>` boundary.
 - **Client Components** - Interactive UI, sign out, token fetching
 
 ## Import Rules
 
-```tsx
-// Server Components
-import { auth, currentUser } from '@clerk/nextjs/server';
+Server Components:
 
-// Client Components
-('use client');
-import { useAuth, useUser } from '@clerk/nextjs';
+```tsx
+import { auth, currentUser } from '@clerk/nextjs/server'
+```
+
+Client Components:
+
+```tsx
+'use client'
+import { useAuth, useUser } from '@clerk/nextjs'
 ```
 
 ## Server Component
 
 ```tsx
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server'
+import { Suspense } from 'react'
 
-export default async function DashboardPage() {
-  const { isAuthenticated } = await auth();
-  if (!isAuthenticated) return <div>Please sign in</div>;
+async function Welcome() {
+  const { isAuthenticated } = await auth()
+  if (!isAuthenticated) return <div>Please sign in</div>
 
-  const user = await currentUser();
-  return <h1>Welcome, {user?.firstName}!</h1>;
+  const user = await currentUser()
+  return <h1>Welcome, {user?.firstName}!</h1>
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense>
+      <Welcome />
+    </Suspense>
+  )
 }
 ```
 
@@ -45,58 +58,78 @@ export default async function DashboardPage() {
 ## Client Component
 
 ```tsx
-'use client';
-import { useUser, useAuth } from '@clerk/nextjs';
+'use client'
+import { useUser, useAuth } from '@clerk/nextjs'
 
 export function UserDashboard() {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const { signOut } = useAuth();
+  const { isLoaded, isSignedIn, user } = useUser()
+  const { signOut } = useAuth()
 
-  if (!isLoaded) return <div>Loading...</div>;
-  if (!isSignedIn) return <div>Not signed in</div>;
+  if (!isLoaded) return <div>Loading...</div>
+  if (!isSignedIn) return <div>Not signed in</div>
 
   return (
     <div>
       <p>Hello, {user.firstName}!</p>
       <button onClick={() => signOut()}>Sign out</button>
     </div>
-  );
+  )
 }
 ```
 
 ## Hybrid Pattern
 
-```tsx
-// Server: fetch initial data
-import { currentUser } from '@clerk/nextjs/server';
-import { ProfileForm } from './ProfileForm';
+Server: fetch initial data in `app/profile/page.tsx`.
 
-export default async function ProfilePage() {
-  const user = await currentUser();
-  if (!user) return <div>Please sign in</div>;
-  return <ProfileForm initialData={{ firstName: user.firstName }} />;
+```tsx
+import { currentUser } from '@clerk/nextjs/server'
+import { Suspense } from 'react'
+import { ProfileForm } from './ProfileForm'
+
+async function Profile() {
+  const user = await currentUser()
+  if (!user) return <div>Please sign in</div>
+  return <ProfileForm initialData={{ firstName: user.firstName }} />
 }
 
-// Client: handle interactions
-('use client');
-import { useUser } from '@clerk/nextjs';
+export default function ProfilePage() {
+  return (
+    <Suspense>
+      <Profile />
+    </Suspense>
+  )
+}
+```
+
+Client: handle interactions in `ProfileForm.tsx`.
+
+```tsx
+'use client'
+import { useUser } from '@clerk/nextjs'
 
 export function ProfileForm({ initialData }) {
-  const { user } = useUser();
-  return <form>...</form>;
+  const { user } = useUser()
+  return <form>...</form>
 }
 ```
 
 ## Conditional Rendering
 
-Use `<Show>` for client-side conditional rendering based on auth state:
+Use `<Show>` to render content based on auth state. In a Server Component, `<Show>` reads the session from the request, so wrap it in `<Suspense>`. In a Client Component, it reads client-side auth state and needs no boundary.
 
 ```tsx
-import { Show } from '@clerk/nextjs';
+import { Show } from '@clerk/nextjs'
+import { Suspense } from 'react'
 
-<Show when="signed-in" fallback={<div>Please sign in</div>}>
-  <Dashboard />
-</Show>;
+export function AuthenticatedDashboard() {
+  return (
+    <Suspense>
+      <Show when="signed-in" fallback={<div>Please sign in</div>}>
+        <Dashboard />
+      </Show>
+    </Suspense>
+  )
+}
 ```
 
 > **Core 2 ONLY (skip if current SDK):** Use `<SignedIn>` and `<SignedOut>` components instead of `<Show>`.

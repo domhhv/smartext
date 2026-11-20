@@ -19,7 +19,7 @@ Permission required to manage: `org:sys_domains:manage`.
 
 ```typescript
 // Current SDK (Core 3+)
-strategy: 'enterprise_sso';
+strategy: 'enterprise_sso'
 ```
 
 Used in `signIn.supportedFirstFactors` when building custom sign-in flows.
@@ -31,25 +31,26 @@ Used in `signIn.supportedFirstFactors` when building custom sign-in flows.
 `provider` and protocol metadata live on the nested `enterpriseConnection`, not directly on the enterprise account. Correct paths:
 
 ```typescript
-import { currentUser } from '@clerk/nextjs/server';
+import { currentUser } from '@clerk/nextjs/server'
 
-const user = await currentUser();
-const ssoAccount = user?.enterpriseAccounts?.[0];
+const user = await currentUser()
+const ssoAccount = user?.enterpriseAccounts?.[0]
 
 if (ssoAccount) {
   // Directly on EnterpriseAccount:
-  ssoAccount.emailAddress; // the email used for SSO
-  ssoAccount.active; // boolean — is the account active
-  (ssoAccount.firstName, ssoAccount.lastName);
-  ssoAccount.lastAuthenticatedAt; // Date | null
+  ssoAccount.emailAddress // the email used for SSO
+  ssoAccount.active // boolean — is the account active
+  ssoAccount.firstName
+  ssoAccount.lastName
+  ssoAccount.lastAuthenticatedAt // Date | null
 
   // Provider metadata lives on the nested EnterpriseAccountConnection:
-  const conn = ssoAccount.enterpriseConnection;
-  conn?.provider; // 'saml_okta' | 'saml_google' | 'saml_microsoft' | 'saml_custom' | 'oauth_<provider>'
-  conn?.protocol; // 'saml' | 'oauth'
-  conn?.domain; // the verified domain
-  conn?.name; // display name of the connection
-  conn?.active;
+  const conn = ssoAccount.enterpriseConnection
+  conn?.provider // 'saml_okta' | 'saml_google' | 'saml_microsoft' | 'saml_custom' | 'oauth_<provider>'
+  conn?.protocol // 'saml' | 'oauth'
+  conn?.domain // the verified domain
+  conn?.name // display name of the connection
+  conn?.active
 }
 ```
 
@@ -57,10 +58,10 @@ if (ssoAccount) {
 
 ```typescript
 // ❌ Wrong — `provider` is not a field on EnterpriseAccount
-ssoAccount.provider;
+ssoAccount.provider
 
 // ✓ Right — `provider` lives on the nested connection
-ssoAccount.enterpriseConnection?.provider;
+ssoAccount.enterpriseConnection?.provider
 ```
 
 `enterpriseConnection` is `null` if the connection was deleted after the account was provisioned. Always guard with `?.`.
@@ -86,14 +87,14 @@ JIT runs on the Enterprise Connection, not on the Verified Domain. The two featu
 Typical pattern (Core 3 canonical):
 
 ```typescript
-const { signIn } = useSignIn();
+const { signIn } = useSignIn()
 
 const { error } = await signIn.sso({
   strategy: 'enterprise_sso',
   identifier: emailAddress,
   redirectUrl: '/dashboard', // where to land on successful sign-in
   redirectCallbackUrl: '/sign-in/callback', // where to land when additional requirements are needed
-});
+})
 ```
 
 The `identifier` is the user's email. Clerk uses the domain to route to the correct Enterprise SSO connection. If no matching connection exists, the sign-in falls back to standard email/password or returns an error.

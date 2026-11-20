@@ -7,9 +7,9 @@ Build a custom sign-in experience using the `useSignIn()` hook.
 ## Hook API
 
 ```typescript
-import { useSignIn } from '@clerk/nextjs'; // or @clerk/clerk-react, @clerk/clerk-expo
+import { useSignIn } from '@clerk/nextjs' // or @clerk/clerk-react, @clerk/clerk-expo
 
-const { signIn, isLoaded, setActive } = useSignIn();
+const { signIn, isLoaded, setActive } = useSignIn()
 ```
 
 | Property    | Type                  | Description                 |
@@ -26,7 +26,7 @@ const { signIn, isLoaded, setActive } = useSignIn();
 const result = await signIn.create({
   identifier: 'user@example.com',
   password: 'securePassword123',
-});
+})
 ```
 
 ### 2. First Factor Verification
@@ -37,13 +37,13 @@ If additional verification is needed (email code, phone code):
 // Prepare first factor
 await signIn.prepareFirstFactor({
   strategy: 'email_code', // or 'phone_code'
-});
+})
 
 // Attempt first factor
 const result = await signIn.attemptFirstFactor({
   strategy: 'email_code',
   code: '123456',
-});
+})
 ```
 
 ### 3. Second Factor (MFA)
@@ -54,13 +54,13 @@ If the sign-in requires MFA:
 // Prepare second factor
 await signIn.prepareSecondFactor({
   strategy: 'email_code', // or 'phone_code'
-});
+})
 
 // Attempt second factor
 const result = await signIn.attemptSecondFactor({
   strategy: 'totp', // or 'email_code', 'phone_code', 'backup_code'
   code: '123456',
-});
+})
 ```
 
 ### 4. Finalize
@@ -68,23 +68,23 @@ const result = await signIn.attemptSecondFactor({
 Set the active session after successful authentication:
 
 ```typescript
-await setActive({ session: signIn.createdSessionId });
+await setActive({ session: signIn.createdSessionId })
 ```
 
 ### Password Reset
 
 ```typescript
 // 1. Start reset flow
-await signIn.create({ strategy: 'reset_password_email_code', identifier: 'user@example.com' });
+await signIn.create({ strategy: 'reset_password_email_code', identifier: 'user@example.com' })
 
 // or prepare after initial create:
-await signIn.prepareFirstFactor({ strategy: 'reset_password_email_code' });
+await signIn.prepareFirstFactor({ strategy: 'reset_password_email_code' })
 
 // 2. Verify reset code
-await signIn.attemptFirstFactor({ strategy: 'reset_password_email_code', code: '123456' });
+await signIn.attemptFirstFactor({ strategy: 'reset_password_email_code', code: '123456' })
 
 // 3. Set new password
-await signIn.resetPassword({ password: 'newSecurePassword123' });
+await signIn.resetPassword({ password: 'newSecurePassword123' })
 ```
 
 ### SSO (OAuth)
@@ -94,7 +94,7 @@ await signIn.authenticateWithRedirect({
   strategy: 'oauth_google', // or 'oauth_github', etc.
   redirectUrl: '/sso-callback',
   redirectUrlComplete: '/',
-});
+})
 ```
 
 ## Error Handling
@@ -102,17 +102,17 @@ await signIn.authenticateWithRedirect({
 Use try/catch with `isClerkAPIResponseError()`:
 
 ```typescript
-import { isClerkAPIResponseError } from '@clerk/nextjs/errors';
+import { isClerkAPIResponseError } from '@clerk/nextjs/errors'
 
 try {
-  await signIn.create({ identifier, password });
+  await signIn.create({ identifier, password })
 } catch (err) {
   if (isClerkAPIResponseError(err)) {
     err.errors.forEach((e) => {
-      console.log(e.code); // e.g. 'form_identifier_not_found'
-      console.log(e.message); // Human-readable message
-      console.log(e.longMessage); // Detailed message
-    });
+      console.log(e.code) // e.g. 'form_identifier_not_found'
+      console.log(e.message) // Human-readable message
+      console.log(e.longMessage) // Detailed message
+    })
   }
 }
 ```
@@ -120,64 +120,64 @@ try {
 ## Complete Example: Email/Password with MFA
 
 ```tsx
-'use client';
-import { useState } from 'react';
-import { useSignIn } from '@clerk/nextjs';
-import { isClerkAPIResponseError } from '@clerk/nextjs/errors';
-import { useRouter } from 'next/navigation';
+'use client'
+import { useState } from 'react'
+import { useSignIn } from '@clerk/nextjs'
+import { isClerkAPIResponseError } from '@clerk/nextjs/errors'
+import { useRouter } from 'next/navigation'
 
 export default function SignInPage() {
-  const { signIn, isLoaded, setActive } = useSignIn();
-  const router = useRouter();
+  const { signIn, isLoaded, setActive } = useSignIn()
+  const router = useRouter()
 
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
-  const [mfaCode, setMfaCode] = useState('');
-  const [step, setStep] = useState<'credentials' | 'mfa'>('credentials');
-  const [error, setError] = useState('');
+  const [identifier, setIdentifier] = useState('')
+  const [password, setPassword] = useState('')
+  const [mfaCode, setMfaCode] = useState('')
+  const [step, setStep] = useState<'credentials' | 'mfa'>('credentials')
+  const [error, setError] = useState('')
 
-  if (!isLoaded) return <div>Loading...</div>;
+  if (!isLoaded) return <div>Loading...</div>
 
   async function handleSignIn(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
+    e.preventDefault()
+    setError('')
 
     try {
-      const result = await signIn.create({ identifier, password });
+      const result = await signIn.create({ identifier, password })
 
       if (result.status === 'needs_second_factor') {
-        setStep('mfa');
-        return;
+        setStep('mfa')
+        return
       }
 
       if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId });
-        router.push('/');
+        await setActive({ session: result.createdSessionId })
+        router.push('/')
       }
     } catch (err) {
       if (isClerkAPIResponseError(err)) {
-        setError(err.errors[0]?.message || 'Sign in failed');
+        setError(err.errors[0]?.message || 'Sign in failed')
       }
     }
   }
 
   async function handleMFA(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
+    e.preventDefault()
+    setError('')
 
     try {
       const result = await signIn.attemptSecondFactor({
         strategy: 'totp',
         code: mfaCode,
-      });
+      })
 
       if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId });
-        router.push('/');
+        await setActive({ session: result.createdSessionId })
+        router.push('/')
       }
     } catch (err) {
       if (isClerkAPIResponseError(err)) {
-        setError(err.errors[0]?.message || 'Verification failed');
+        setError(err.errors[0]?.message || 'Verification failed')
       }
     }
   }
@@ -185,25 +185,40 @@ export default function SignInPage() {
   if (step === 'mfa') {
     return (
       <form onSubmit={handleMFA}>
-        <input type="text" value={mfaCode} onChange={(e) => setMfaCode(e.target.value)} placeholder="Enter MFA code" />
+        <input
+          type="text"
+          value={mfaCode}
+          onChange={(e) => setMfaCode(e.target.value)}
+          placeholder="Enter MFA code"
+        />
         {error && <p>{error}</p>}
         <button type="submit">Verify</button>
       </form>
-    );
+    )
   }
 
   return (
     <form onSubmit={handleSignIn}>
-      <input type="email" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="Email" />
-      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
+      <input
+        type="email"
+        value={identifier}
+        onChange={(e) => setIdentifier(e.target.value)}
+        placeholder="Email"
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
+      />
       {error && <p>{error}</p>}
       <button type="submit">Sign In</button>
     </form>
-  );
+  )
 }
 ```
 
 ## Docs
 
 - [Custom sign-in flow](https://clerk.com/docs/custom-flows/overview)
-- [useSignIn() reference](https://clerk.com/docs/references/react/use-sign-in)
+- [useSignIn() reference](https://clerk.com/docs/reference/hooks/legacy/use-sign-in)

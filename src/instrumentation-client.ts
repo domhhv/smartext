@@ -16,7 +16,6 @@ if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
   Sentry.init({
     debug: false,
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-    enableLogs: true,
     integrations: [Sentry.replayIntegration()],
     replaysOnErrorSampleRate: 1.0,
     replaysSessionSampleRate: 0.1,

@@ -5,10 +5,10 @@
 The primary billing UI component. Renders subscription plans and opens Clerk's in-app checkout drawer when a user selects a plan.
 
 ```tsx
-import { PricingTable } from '@clerk/nextjs';
+import { PricingTable } from '@clerk/nextjs'
 
 export default function PricingPage() {
-  return <PricingTable />;
+  return <PricingTable />
 }
 ```
 
@@ -26,26 +26,66 @@ export default function PricingPage() {
 
 **Props (all optional):**
 
-| Prop                         | Type                         | Description                                                                                 |
-| ---------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `appearance`                 | `Appearance`                 | Style overrides for the component.                                                          |
-| `checkoutProps`              | `{ appearance: Appearance }` | Style overrides for the checkout drawer.                                                    |
-| `collapseFeatures`           | `boolean`                    | Start with features collapsed. Requires `layout: 'default'`. Defaults to `false`.           |
-| `ctaPosition`                | `'top' \| 'bottom'`          | Placement of the CTA button. Requires `layout: 'default'`. Defaults to `'bottom'`.          |
-| `fallback`                   | `JSX`                        | UI to show while the pricing table is loading.                                              |
-| `for`                        | `'user' \| 'organization'`   | Which subscriber the table targets. Defaults to `'user'`. **Use `'organization'` for B2B.** |
-| `newSubscriptionRedirectUrl` | `string`                     | URL to navigate to after checkout completes.                                                |
+| Prop | Type | Description |
+| --- | --- | --- |
+| `appearance` | `Appearance` | Style overrides for the component. |
+| `checkoutProps` | `{ appearance: Appearance }` | Style overrides for the checkout drawer. |
+| `collapseFeatures` | `boolean` | Start with features collapsed. Requires `layout: 'default'`. Defaults to `false`. |
+| `ctaPosition` | `'top' \| 'bottom'` | Placement of the CTA button. Requires `layout: 'default'`. Defaults to `'bottom'`. |
+| `fallback` | `JSX` | UI to show while the pricing table is loading. |
+| `for` | `'user' \| 'organization'` | Which subscriber the table targets. Defaults to `'user'`. **Use `'organization'` for B2B.** |
+| `newSubscriptionRedirectUrl` | `string` | URL to navigate to after checkout completes. |
 
 For most cases, use `<PricingTable />` with no props (or just `for="organization"` for B2B).
+
+## Upgrade / Downgrade Page
+
+A billing page that changes its copy by plan reads `auth()` in an async child inside `<Suspense>`, so `next build` passes with Cache Components (`cacheComponents: true`, the `create-next-app` default):
+
+```tsx
+import { PricingTable } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
+import { Suspense } from 'react'
+
+async function Billing() {
+  const { has } = await auth()
+  const isPro = has({ plan: 'pro' })
+
+  return (
+    <div>
+      <h1>Billing</h1>
+      {isPro ? (
+        <div>
+          <p>You are on the Pro plan</p>
+          <PricingTable />
+        </div>
+      ) : (
+        <div>
+          <p>Upgrade to access premium features</p>
+          <PricingTable />
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense>
+      <Billing />
+    </Suspense>
+  )
+}
+```
 
 ## CheckoutButton
 
 For custom checkout UX outside `<PricingTable />`, use `<CheckoutButton />` from `@clerk/nextjs/experimental`. It opens the same checkout drawer for a specific `planId`. Must be wrapped in `<Show when="signed-in">`.
 
 ```tsx
-'use client';
-import { Show } from '@clerk/nextjs';
-import { CheckoutButton } from '@clerk/nextjs/experimental';
+'use client'
+import { Show } from '@clerk/nextjs'
+import { CheckoutButton } from '@clerk/nextjs/experimental'
 
 export function UpgradeCTA() {
   return (
@@ -58,7 +98,7 @@ export function UpgradeCTA() {
         onSubscriptionComplete={() => console.log('subscribed')}
       />
     </Show>
-  );
+  )
 }
 ```
 
@@ -71,31 +111,31 @@ Key props: `planId` (required), `planPeriod: 'month' | 'annual'`, `for: 'user' |
 ### Server usage
 
 ```typescript
-import { auth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server'
 
-const { has } = await auth();
+const { has } = await auth()
 
-has({ plan: 'pro' }); // true if user/org is on 'pro' plan
-has({ feature: 'export' }); // true if user/org has 'export' feature entitlement
+has({ plan: 'pro' }) // true if user/org is on 'pro' plan
+has({ feature: 'export' }) // true if user/org has 'export' feature entitlement
 ```
 
 ### Client usage
 
 ```tsx
-'use client';
-import { useAuth } from '@clerk/nextjs';
+'use client'
+import { useAuth } from '@clerk/nextjs'
 
-const { has } = useAuth();
-has?.({ plan: 'pro' }); // optional chaining, may be undefined before hydration
-has?.({ feature: 'export' });
+const { has } = useAuth()
+has?.({ plan: 'pro' }) // optional chaining, may be undefined before hydration
+has?.({ feature: 'export' })
 ```
 
 ### Combining with role checks
 
 ```typescript
-const { has, orgRole } = await auth();
+const { has, orgRole } = await auth()
 
-const canManageBilling = has({ plan: 'pro' }) && orgRole === 'org:admin';
+const canManageBilling = has({ plan: 'pro' }) && orgRole === 'org:admin'
 ```
 
 ### What `has()` checks
@@ -108,27 +148,34 @@ If a user subscribes and then `has()` returns false, the session token needs to 
 
 ```tsx
 import { Show } from '@clerk/nextjs'
+import { Suspense } from 'react'
 
-<Show when={{ plan: 'pro' }}>
-	<ProFeatures />
-</Show>
+export function BillingFeatures() {
+  return (
+    <Suspense>
+      <Show when={{ plan: 'pro' }}>
+        <ProFeatures />
+      </Show>
 
-<Show when={{ feature: 'analytics' }}>
-	<AnalyticsDashboard />
-</Show>
+      <Show when={{ feature: 'analytics' }}>
+        <AnalyticsDashboard />
+      </Show>
+    </Suspense>
+  )
+}
 ```
 
-`<Show>` accepts `plan` and `feature` props in addition to `role` and `permission`. Renders children only if the condition is met.
+`<Show>` accepts `plan` and `feature` props in addition to `role` and `permission`. Renders children only if the condition is met. In a Next.js Server Component, `<Show>` reads the session from the request, so wrap it in `<Suspense>`: with Cache Components (the `create-next-app` default), `next build` fails on request data read outside a `<Suspense>` boundary. In a Client Component, it needs no boundary.
 
 ## Import Reference
 
 ```typescript
 // Stable
-import { PricingTable, Show, useAuth } from '@clerk/nextjs';
-import { auth } from '@clerk/nextjs/server';
+import { PricingTable, Show, useAuth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 
 // Experimental (Billing)
-import { CheckoutButton, useSubscription } from '@clerk/nextjs/experimental';
+import { CheckoutButton, useSubscription } from '@clerk/nextjs/experimental'
 ```
 
 Stable billing primitives (`PricingTable`, `has()` via `auth()` / `useAuth()`, `<Show>`) live in `@clerk/nextjs`. Experimental hooks and components (`useSubscription`, `CheckoutButton`, `SubscriptionDetailsButton`, `PlanDetailsButton`) live in `@clerk/nextjs/experimental`. No separate billing package needed.

@@ -5,9 +5,9 @@ Build a custom sign-up experience using the `useSignUp()` hook.
 ## Hook API
 
 ```typescript
-import { useSignUp } from '@clerk/nextjs'; // or @clerk/react, @clerk/expo
+import { useSignUp } from '@clerk/nextjs' // or @clerk/react, @clerk/expo
 
-const { signUp, errors, fetchStatus } = useSignUp();
+const { signUp, errors, fetchStatus } = useSignUp()
 ```
 
 | Property      | Type                   | Description                            |
@@ -26,7 +26,7 @@ const { error } = await signUp.password({
   password: 'securePassword123',
   firstName: 'Jane', // optional
   lastName: 'Doe', // optional
-});
+})
 ```
 
 ### SSO (OAuth)
@@ -36,13 +36,13 @@ const { error } = await signUp.sso({
   strategy: 'oauth_google', // or 'oauth_github', etc.
   redirectUrl: '/dashboard', // where to go after SSO completes
   redirectCallbackUrl: '/sso-callback', // intermediate callback route
-});
+})
 ```
 
 ### Web3
 
 ```typescript
-const { error } = await signUp.web3({ strategy: 'web3_solana_signature' });
+const { error } = await signUp.web3({ strategy: 'web3_solana_signature' })
 ```
 
 ### Update (add fields to existing sign-up)
@@ -55,7 +55,7 @@ const { error } = await signUp.update({
   lastName: 'Doe',
   unsafeMetadata: { referralSource: 'twitter' },
   legalAccepted: true,
-});
+})
 ```
 
 ## Email / Phone Verification
@@ -66,27 +66,27 @@ After creating a sign-up, verify the user's email or phone:
 
 ```typescript
 // Send verification code
-const { error } = await signUp.verifications.sendEmailCode();
+const { error } = await signUp.verifications.sendEmailCode()
 
 // Verify the code
-const { error } = await signUp.verifications.verifyEmailCode({ code: '123456' });
+const { error } = await signUp.verifications.verifyEmailCode({ code: '123456' })
 ```
 
 ### Phone Code
 
 ```typescript
 // Send verification code
-const { error } = await signUp.verifications.sendPhoneCode();
+const { error } = await signUp.verifications.sendPhoneCode()
 
 // Verify the code
-const { error } = await signUp.verifications.verifyPhoneCode({ code: '123456' });
+const { error } = await signUp.verifications.verifyPhoneCode({ code: '123456' })
 ```
 
 ### Email Link
 
 ```typescript
 // verificationUrl: where the user lands after clicking the email link (relative or absolute)
-const { error } = await signUp.verifications.sendEmailLink({ verificationUrl: '/verify' });
+const { error } = await signUp.verifications.sendEmailLink({ verificationUrl: '/verify' })
 // User clicks the link in their email to verify
 ```
 
@@ -97,16 +97,16 @@ After successful sign-up and verification, call `finalize()` to activate the ses
 ```typescript
 await signUp.finalize({
   navigate: async ({ session, decorateUrl }) => {
-    const destination = session.currentTask ? `/sign-up/tasks/${session.currentTask.key}` : '/';
-    const url = decorateUrl(destination);
+    const destination = session.currentTask ? `/sign-up/tasks/${session.currentTask.key}` : '/'
+    const url = decorateUrl(destination)
     // decorateUrl may return an absolute URL for Safari ITP
     if (url.startsWith('http')) {
-      window.location.href = url;
+      window.location.href = url
     } else {
-      router.push(url);
+      router.push(url)
     }
   },
-});
+})
 ```
 
 ### Transferable Sign-Ups
@@ -118,7 +118,7 @@ If `signUp.isTransferable` is `true`, the identifier matches an existing user an
 Clear local sign-up state and start over:
 
 ```typescript
-signUp.reset();
+signUp.reset()
 ```
 
 ## Error Handling
@@ -126,22 +126,22 @@ signUp.reset();
 All methods return `Promise<{ error: ClerkError | null }>`. Errors are also available reactively on the hook:
 
 ```typescript
-const { signUp, errors } = useSignUp();
+const { signUp, errors } = useSignUp()
 
 // Field-level errors
-errors?.fields?.emailAddress; // { code, message, longMessage? }
-errors?.fields?.password; // { code, message, longMessage? }
-errors?.fields?.firstName; // { code, message, longMessage? }
-errors?.fields?.lastName; // { code, message, longMessage? }
-errors?.fields?.phoneNumber; // { code, message, longMessage? }
-errors?.fields?.username; // { code, message, longMessage? }
-errors?.fields?.code; // { code, message, longMessage? }
+errors?.fields?.emailAddress // { code, message, longMessage? }
+errors?.fields?.password // { code, message, longMessage? }
+errors?.fields?.firstName // { code, message, longMessage? }
+errors?.fields?.lastName // { code, message, longMessage? }
+errors?.fields?.phoneNumber // { code, message, longMessage? }
+errors?.fields?.username // { code, message, longMessage? }
+errors?.fields?.code // { code, message, longMessage? }
 
 // Global errors
-errors?.global; // ClerkGlobalHookError[] | null
+errors?.global // ClerkGlobalHookError[] | null
 
 // Raw error array
-errors?.raw; // ClerkError[] | null
+errors?.raw // ClerkError[] | null
 ```
 
 ## Complete Example: Phone OTP Sign-Up
@@ -149,33 +149,33 @@ errors?.raw; // ClerkError[] | null
 From [the docs](https://clerk.com/docs/guides/development/custom-flows/authentication/email-sms-otp). Uses phone OTP with inline comments for adapting to email OTP.
 
 ```tsx
-'use client';
+'use client'
 
-import * as React from 'react';
-import { useAuth, useSignUp } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
+import * as React from 'react'
+import { useAuth, useSignUp } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
 
 export default function SignUpPage() {
-  const { signUp, errors, fetchStatus } = useSignUp();
-  const { isSignedIn } = useAuth();
-  const router = useRouter();
+  const { signUp, errors, fetchStatus } = useSignUp()
+  const { isSignedIn } = useAuth()
+  const router = useRouter()
 
   const handleSubmit = async (formData: FormData) => {
     // For email OTP: collect the email address instead of the phone number
-    const phoneNumber = formData.get('phoneNumber') as string;
+    const phoneNumber = formData.get('phoneNumber') as string
 
     // For email OTP: change create({ phoneNumber }) to create({ emailAddress })
-    const error = await signUp.create({ phoneNumber });
+    const error = await signUp.create({ phoneNumber })
 
     // For email OTP: change sendPhoneCode() to sendEmailCode()
-    if (!error) await signUp.verifications.sendPhoneCode();
-  };
+    if (!error) await signUp.verifications.sendPhoneCode()
+  }
 
   const handleVerify = async (formData: FormData) => {
-    const code = formData.get('code') as string;
+    const code = formData.get('code') as string
 
     // For email OTP: change verifyPhoneCode() to verifyEmailCode()
-    await signUp.verifications.verifyPhoneCode({ code });
+    await signUp.verifications.verifyPhoneCode({ code })
 
     if (signUp.status === 'complete') {
       await signUp.finalize({
@@ -183,23 +183,23 @@ export default function SignUpPage() {
           if (session?.currentTask) {
             // Handle pending session tasks
             // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
-            console.log(session?.currentTask);
-            return;
+            console.log(session?.currentTask)
+            return
           }
 
-          const url = decorateUrl('/');
+          const url = decorateUrl('/')
           if (url.startsWith('http')) {
-            window.location.href = url;
+            window.location.href = url
           } else {
-            router.push(url);
+            router.push(url)
           }
         },
-      });
+      })
     }
-  };
+  }
 
   if (signUp.status === 'complete' || isSignedIn) {
-    return null;
+    return null
   }
 
   if (
@@ -224,7 +224,7 @@ export default function SignUpPage() {
         {/* For email OTP: change sendPhoneCode() to sendEmailCode() */}
         <button onClick={() => signUp.verifications.sendPhoneCode()}>I need a new code</button>
       </>
-    );
+    )
   }
 
   return (
@@ -246,7 +246,7 @@ export default function SignUpPage() {
       {/* Required for sign-up flows. Clerk's bot sign-up protection is enabled by default */}
       <div id="clerk-captcha" />
     </>
-  );
+  )
 }
 ```
 
@@ -254,4 +254,4 @@ export default function SignUpPage() {
 
 - [Custom sign-up flow](https://clerk.com/docs/custom-flows/overview)
 - [Email/phone OTP custom flow](https://clerk.com/docs/guides/development/custom-flows/authentication/email-sms-otp)
-- [useSignUp() reference](https://clerk.com/docs/references/react/use-sign-up)
+- [useSignUp() reference](https://clerk.com/docs/reference/hooks/use-sign-up)

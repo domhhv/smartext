@@ -97,12 +97,11 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 
   exportJSON(): SerializedImageNode {
     return {
+      ...super.exportJSON(),
       altText: this.getAltText(),
       height: this.__height,
       maxWidth: this.__maxWidth,
       src: this.getSrc(),
-      type: 'image',
-      version: 1,
       width: this.__width,
     };
   }
