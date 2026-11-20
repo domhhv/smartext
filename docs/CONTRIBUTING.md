@@ -10,7 +10,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 ### Prerequisites
 
-- Node.js 24.18.0 or higher
+- Node.js 24.22.3 or higher
 - npm 11.16.0 or higher
 
 ### Development Setup

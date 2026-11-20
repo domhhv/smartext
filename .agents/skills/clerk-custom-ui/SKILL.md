@@ -1,13 +1,11 @@
 ---
 name: clerk-custom-ui
-description: Custom authentication flows and component appearance - hooks (useSignIn,
-  useSignUp), themes, colors, fonts, CSS. Use for custom sign-in/sign-up flows, appearance
-  styling, visual customization, branding.
+description: Custom authentication flows and component appearance - hooks (useSignIn, useSignUp), themes, colors, fonts, CSS. Use for custom sign-in/sign-up flows, appearance styling, visual customization, branding.
 allowed-tools: WebFetch
 license: MIT
 metadata:
   author: clerk
-  version: 2.3.0
+  version: 2.3.1
 ---
 
 # Custom UI
@@ -33,11 +31,11 @@ This skill covers two areas:
 
 ## Custom Flow References
 
-| Task                       | Core 2                                           | Current                    |
-| -------------------------- | ------------------------------------------------ | -------------------------- |
-| Custom sign-in (useSignIn) | `core-2/custom-sign-in.md`                       | `core-3/custom-sign-in.md` |
-| Custom sign-up (useSignUp) | `core-2/custom-sign-up.md`                       | `core-3/custom-sign-up.md` |
-| `<Show>` component         | _(use `<SignedIn>`, `<SignedOut>`, `<Protect>`)_ | `core-3/show-component.md` |
+| Task | Core 2 | Current |
+| --- | --- | --- |
+| Custom sign-in (useSignIn) | `core-2/custom-sign-in.md` | `core-3/custom-sign-in.md` |
+| Custom sign-up (useSignUp) | `core-2/custom-sign-up.md` | `core-3/custom-sign-up.md` |
+| `<Show>` component | _(use `<SignedIn>`, `<SignedOut>`, `<Protect>`)_ | `core-3/show-component.md` |
 
 ---
 
@@ -47,14 +45,12 @@ Appearance customization applies to both Core 2 and the current SDK.
 
 ### Component Customization Options
 
-| Task                               | Documentation                                                                             |
-| ---------------------------------- | ----------------------------------------------------------------------------------------- |
-| Appearance prop overview           | https://clerk.com/docs/nextjs/guides/customizing-clerk/appearance-prop/overview           |
-| Options (structure, logo, buttons) | https://clerk.com/docs/nextjs/guides/customizing-clerk/appearance-prop/layout             |
-| Themes (pre-built dark/light)      | https://clerk.com/docs/nextjs/guides/customizing-clerk/appearance-prop/themes             |
-| Variables (colors, fonts, spacing) | https://clerk.com/docs/nextjs/guides/customizing-clerk/appearance-prop/variables          |
-| CAPTCHA configuration              | https://clerk.com/docs/nextjs/guides/customizing-clerk/appearance-prop/captcha            |
-| Bring your own CSS                 | https://clerk.com/docs/nextjs/guides/customizing-clerk/appearance-prop/bring-your-own-css |
+- [Appearance prop overview](https://clerk.com/docs/nextjs/guides/customizing-clerk/appearance-prop/overview)
+- [Options](https://clerk.com/docs/nextjs/guides/customizing-clerk/appearance-prop/options): structure, logo, buttons
+- [Themes](https://clerk.com/docs/nextjs/guides/customizing-clerk/appearance-prop/themes): prebuilt dark and light themes
+- [Variables](https://clerk.com/docs/nextjs/guides/customizing-clerk/appearance-prop/variables): colors, fonts, spacing
+- [CAPTCHA configuration](https://clerk.com/docs/nextjs/guides/customizing-clerk/appearance-prop/captcha)
+- [Bring your own CSS](https://clerk.com/docs/nextjs/guides/customizing-clerk/appearance-prop/bring-your-own-css)
 
 ### Appearance Pattern
 
@@ -148,7 +144,7 @@ Also import shadcn CSS in your global styles:
 > **Core 2 ONLY (skip if current SDK):** Import from `@clerk/themes` and `@clerk/themes/shadcn.css`:
 >
 > ```typescript
-> import { shadcn } from '@clerk/themes';
+> import { shadcn } from '@clerk/themes'
 > ```
 >
 > ```css
@@ -159,17 +155,17 @@ Also import shadcn CSS in your global styles:
 
 1. Identify customization needs (custom flow or appearance)
 2. For custom flows: check SDK version → read appropriate `core-2/` or `core-3/` reference
-3. For appearance: WebFetch the appropriate documentation from table above
+3. For appearance: WebFetch the appropriate documentation above
 4. Apply appearance prop to your Clerk components or build custom flow with hooks
 
 ## Common Pitfalls
 
-| Issue                        | Solution                                                                                      |
-| ---------------------------- | --------------------------------------------------------------------------------------------- |
-| Colors not applying          | Use `colorPrimary` not `primaryColor`                                                         |
-| Logo not showing             | Put `logoImageUrl` inside `options: {}` (or `layout: {}` in Core 2)                           |
-| Social buttons wrong         | Add `socialButtonsVariant: 'iconButton'` in `options` (or `layout` in Core 2)                 |
-| Styling not working          | Use appearance prop, not direct CSS (unless with bring-your-own-css)                          |
+| Issue | Solution |
+| --- | --- |
+| Colors not applying | Use `colorPrimary` not `primaryColor` |
+| Logo not showing | Put `logoImageUrl` inside `options: {}` (or `layout: {}` in Core 2) |
+| Social buttons wrong | Add `socialButtonsVariant: 'iconButton'` in `options` (or `layout` in Core 2) |
+| Styling not working | Use appearance prop, not direct CSS (unless with bring-your-own-css) |
 | Hook returns different shape | Check SDK version — Core 2 and current have completely different `useSignIn`/`useSignUp` APIs |
 
 ## See Also

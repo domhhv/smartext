@@ -1,5 +1,5 @@
 import filterWebpackStats from '@bundle-stats/plugin-webpack-filter';
-import { withSentryConfig } from '@sentry/nextjs';
+import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 import { StatsWriterPlugin } from 'webpack-stats-plugin';
 

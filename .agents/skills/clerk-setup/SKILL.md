@@ -1,333 +1,247 @@
 ---
 name: clerk-setup
-description: Add Clerk authentication to any project by following the official quickstart
-  guides.
+description: Set up Clerk authentication in any project with the Clerk CLI and official framework quickstarts. Use when adding Clerk, initializing Clerk, scaffolding a new app with Clerk, or migrating an existing authentication system to Clerk.
 license: MIT
 allowed-tools: WebFetch
-compatibility: Requires NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY (or framework-specific equivalents like VITE_CLERK_PUBLISHABLE_KEY for Vite-based apps). Keys can be auto-generated via Keyless on first SDK initialization, or pulled from the Clerk Dashboard. Requires Node.js 20.9.0 or higher.
+compatibility: Requires Node.js 20.9.0 or later for current Clerk SDKs. The Clerk CLI can provision temporary development keys on supported frameworks without a Clerk account.
 metadata:
   author: clerk
-  version: 2.3.0
+  version: 2.6.2
 ---
 
-# Adding Clerk
+# Set up Clerk
 
-> **Version**: Check `package.json` for the SDK version — see `clerk` skill for the version table. Core 2 differences are noted inline with `> **Core 2 ONLY (skip if current SDK):**` callouts.
+Use the [Clerk CLI](https://clerk.com/docs/cli) to add authentication. In agent environments, supported frameworks default to accountless setup: `npx -y clerk@latest init` provisions a claimable application and writes temporary development keys without requiring a Clerk account.
 
-This skill sets up Clerk for authentication by following the official quickstart documentation. For agents, the `clerk` CLI handles most of this end to end — see the next section.
+The commands below use `npx -y clerk@latest`. In a project that uses pnpm, Bun, or Yarn 2+, run them with `pnpm dlx clerk@latest`, `bunx clerk@latest`, or `yarn dlx clerk@latest` instead. Do not install the CLI globally.
 
-## Agent-first: Provision via CLI
+## Before you start
 
-The `clerk` CLI replaces most Dashboard clicks. Three scenarios cover almost everything:
+Show the user this checklist and wait for a yes:
 
-### Scenario A — New project, new Clerk app
+```
+Here's what I'll do to get you set up with Clerk.
+
+1. Set up Clerk in this project, or scaffold a new app if this directory is empty.
+2. Install Clerk's agent skills for the coding agents on this machine, if they aren't installed yet.
+3. Start your app with Clerk installed.
+
+Shall I proceed?
+```
+
+## Existing authentication
+
+Before `init`, inspect auth dependencies, routes, middleware, sessions, and user records — never environment files. If a different auth provider exists, stop and get approval for a migration plan covering:
+
+- Backend API user import, stable external IDs, compatible password hashes, and OAuth continuity.
+- Protected routes, tokens, session cutover, and rollout strategy.
+
+Do not modify or remove existing auth without approval.
+
+See the [migration guide](https://clerk.com/docs/guides/development/migrating/overview). If Clerk's skills are available to you, move the users themselves with the `clerk-migrate` skill instead of hand-rolling a Backend API import script.
+
+## Existing Clerk projects
+
+For a native iOS or macOS app, follow the [iOS setup prompt](https://clerk.com/docs/ios/getting-started/quickstart.md) instead. It reuses the linked application and keeps existing configuration.
+
+For a native Android app, follow the [Android setup prompt](https://clerk.com/docs/android/getting-started/quickstart.md) instead. It reuses the linked application and keeps existing configuration.
+
+If the project already uses Clerk, skip `init` in Steps 1a and 1b: a signed-out agent run could create another application and replace the project's Clerk keys. If Clerk already works and the user asked for setup, report that no setup is needed. If the user reports missing keys, restore them through the existing-application branch below. If inspection finds missing provider, middleware, or auth routes, add only those pieces from the matching quickstart in Step 2. Never create a replacement application.
+
+Inspect its Clerk package versions before changing anything and use the version table in the [clerk skill](https://clerk.com/.well-known/skills/clerk/SKILL.md) to identify its SDK generation. Preserve that generation unless the user asks to upgrade it, and apply these differences in every step below for Core 2 projects:
+
+- React and Expo use `@clerk/clerk-react` and `@clerk/clerk-expo` instead of `@clerk/react` and `@clerk/expo`.
+- Control components are `<SignedIn>` and `<SignedOut>` instead of `<Show>`.
+- Next.js `ClerkProvider` can wrap `<html>` instead of going inside `<body>`.
+- The minimum Node.js version is 18.17.0 instead of 20.9.0.
+- Themes come from `@clerk/themes` and `@clerk/themes/shadcn.css` instead of `@clerk/ui`.
+
+## Use an existing Clerk application (optional)
+
+Follow this branch when the user asks to use an existing Clerk application or an existing Clerk project needs its keys restored. Have them authenticate from their host terminal before targeting account-level resources:
 
 ```bash
-clerk init --framework <next|react|vue|nuxt|astro|react-router|tanstack-react-start|expressjs|fastify|expo> -y
+npx -y clerk@latest auth login
 ```
 
-`clerk init` creates the Clerk app via PLAPI, links the project, writes the framework-specific publishable + secret keys to the right env file (e.g. `.env.local` for Next.js, `.env` for Vite-based projects), and installs the SDK package.
-
-### Scenario B — Existing project, existing Clerk app
+If they supplied an application ID, keep it for `init` or `link` as appropriate. Otherwise, list the applications:
 
 ```bash
-clerk auth login                      # one-time OAuth (skip if already logged in)
-clerk link                            # autolinks if a CLERK_PUBLISHABLE_KEY is in your .env
-clerk link --app app_xxx              # explicit form, required in agent mode
-clerk env pull                        # writes the framework-detected env vars
+npx -y clerk@latest apps list --json
 ```
 
-### Scenario C — Existing project, new Clerk app
+Show the names and IDs and ask which application to use. Never choose an application for them. For a new Clerk integration, pass the selected ID as `--app <application_id>` to `init`. For a project already using Clerk, do not run `init`. If it is not already linked to the selected application, link it:
 
 ```bash
-clerk auth login
-clerk apps create "My App" --json     # returns the new app_id
-clerk link --app app_xxx
-clerk env pull
+npx -y clerk@latest link --app <application_id>
 ```
 
-### Daily ops
+For missing development keys, pull them:
 
 ```bash
-clerk env pull                        # refresh keys (uses linked profile)
-clerk env pull --instance prod        # production keys
-clerk doctor --json                   # framework integration health check
+npx -y clerk@latest env pull
 ```
 
-### Rotate the secret key (replaces Dashboard rotation)
+Only when the user needs production keys, run `npx -y clerk@latest deploy status --mode agent` and follow its `nextAction`. Once production is complete, copy the keys to the host as described under "After setup". Never pull production keys without `--print`: a plain `env pull` writes them over the local development keys. Do not replace working keys or switch applications without the user's confirmation.
 
-PLAPI exposes secret-key rotation directly. Use raw `clerk api` until the friendly wrapper ships:
+## Step 1a: Existing project without Clerk
+
+For a native iOS or macOS app in Xcode, follow the [iOS setup prompt](https://clerk.com/docs/ios/getting-started/quickstart.md) instead of the remaining steps.
+
+For a native Android app with a Gradle project, follow the [Android setup prompt](https://clerk.com/docs/android/getting-started/quickstart.md) instead of the remaining steps. Keep an application the user already chose, such as one selected in the Clerk Dashboard, and pass it to `init` with `--app`.
+
+For a project that does not already use Clerk, run from the project root:
 
 ```bash
-clerk api --platform POST /v1/platform/applications/<app_id>/rotate_secret_keys \
-  -d '{"delay_old_secrets_expiration_hours": 24, "reason": "scheduled rotation"}'
+npx -y clerk@latest init
 ```
 
-`delay_old_secrets_expiration_hours` keeps the old key valid for the grace period so deploys can roll forward without downtime.
+`init` detects the framework and package manager, installs the SDK, and configures the provider, middleware, auth routes, and environment. It also installs Clerk's agent skills globally. If the user declined them, or they're already available to you, such as when you loaded this as the `clerk-setup` skill, add `--no-skills` to skip that step. Don't pass `--framework` or `--pm` unless asked. Add `--app <application_id>` only when the user selected an application in the optional branch above.
 
-### Notes for agents
+## Step 1b: Empty directory
 
-- `clerk link` (no flags) only autolinks when a `CLERK_PUBLISHABLE_KEY` is already in `.env` / `.env.local`. Without it, agent mode errors out: "Cannot select an application in agent mode." When that happens, run `clerk apps list --json`, and ask the user which `app_id` to link rather than guessing.
-- Pass `--json` on `apps list/create`, `users create`, and `doctor` for parseable output.
-- The CLI auto-detects framework env var names (`VITE_CLERK_PUBLISHABLE_KEY` for Vite, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` for Next.js, etc.) and target file (`.env.development.local` > `.env.local` > `.env`).
+For a native iOS or macOS app, follow the [iOS setup prompt](https://clerk.com/docs/ios/getting-started/quickstart.md) instead of the remaining steps. It covers creating the Xcode project.
 
-## Quick Reference (Dashboard fallback)
+For a native Android app, follow the [Android setup prompt](https://clerk.com/docs/android/getting-started/quickstart.md) instead of the remaining steps. It creates the Gradle project with `init --starter --framework android`; without `--starter`, `init` treats the directory as an existing Android project. Keep an application the user already chose, such as one selected in the Clerk Dashboard, and pass it to `init` with `--app`.
 
-If the CLI isn't an option (sandboxed environments, docs walkthroughs), here's the manual Dashboard path:
-
-| Step                   | Action                                                             |
-| ---------------------- | ------------------------------------------------------------------ |
-| 1. Detect framework    | Check `package.json` dependencies                                  |
-| 2. Fetch quickstart    | Use WebFetch on the appropriate docs URL                           |
-| 3. Follow instructions | Execute steps; create `proxy.ts` (Next.js <=15: `middleware.ts`)   |
-| 4. Get API keys        | From [dashboard.clerk.com](https://dashboard.clerk.com/~/api-keys) |
-
-> If the project has `components.json` (shadcn/ui), apply the shadcn theme after setup. See `clerk-custom-ui` skill → shadcn Theme.
-
-## Framework Detection
-
-Check `package.json` to identify the framework:
-
-| Dependency              | Framework          | Quickstart URL                                                           |
-| ----------------------- | ------------------ | ------------------------------------------------------------------------ |
-| `next`                  | Next.js            | `https://clerk.com/docs/nextjs/getting-started/quickstart`               |
-| `@remix-run/react`      | Remix (deprecated) | Migrate to React Router v7 — use the React Router quickstart below       |
-| `react-router`          | React Router (v7+) | `https://clerk.com/docs/react-router/getting-started/quickstart`         |
-| `astro`                 | Astro              | `https://clerk.com/docs/astro/getting-started/quickstart`                |
-| `nuxt`                  | Nuxt               | `https://clerk.com/docs/nuxt/getting-started/quickstart`                 |
-| `@tanstack/react-start` | TanStack Start     | `https://clerk.com/docs/tanstack-react-start/getting-started/quickstart` |
-| `react` (no framework)  | React SPA          | `https://clerk.com/docs/react/getting-started/quickstart`                |
-| `vue`                   | Vue                | `https://clerk.com/docs/vue/getting-started/quickstart`                  |
-| `express`               | Express            | `https://clerk.com/docs/expressjs/getting-started/quickstart`            |
-| `fastify`               | Fastify            | `https://clerk.com/docs/fastify/getting-started/quickstart`              |
-| `expo`                  | Expo               | `https://clerk.com/docs/expo/getting-started/quickstart`                 |
-
-For other platforms:
-
-- **Chrome Extension**: `https://clerk.com/docs/chrome-extension/getting-started/quickstart`
-- **Android**: `https://clerk.com/docs/android/getting-started/quickstart`
-- **iOS**: `https://clerk.com/docs/ios/getting-started/quickstart`
-- **Vanilla JavaScript**: `https://clerk.com/docs/js-frontend/getting-started/quickstart`
-
-## Decision Tree
-
-```
-User Request: "Add Clerk" / "Add authentication"
-    │
-    ├─ Read package.json
-    │
-    ├─ Existing auth detected?
-    │   ├─ YES → Audit → Migration plan
-    │   └─ NO → Fresh install
-    │
-    ├─ Identify framework → WebFetch quickstart → Follow instructions
-    │   └─ Next.js? → Create proxy.ts (Next.js <=15: middleware.ts)
-    │
-    └─ components.json exists? → YES → Apply shadcn theme (see clerk-custom-ui)
-```
-
-## Setup Process
-
-### 1. Detect the Framework
-
-Read the project's `package.json` and match dependencies to the table above.
-
-### 2. Fetch the Quickstart Guide
-
-Use WebFetch to retrieve the official quickstart for the detected framework:
-
-```
-WebFetch: https://clerk.com/docs/{framework}/getting-started/quickstart
-Prompt: "Extract the complete setup instructions including all code snippets, file paths, and configuration steps."
-```
-
-### 3. Follow the Instructions
-
-Execute each step from the quickstart guide:
-
-- Install the required packages
-- Set up environment variables
-- Add the provider and proxy/middleware
-- Create sign-in/sign-up routes if needed
-- Test the integration
-
-> **Next.js:** Create `proxy.ts` (Next.js <=15: `middleware.ts`). See the `clerk-nextjs-patterns` skill for middleware strategies.
-
-> **shadcn/ui detected** (`components.json` exists): ALWAYS apply the shadcn theme. See `clerk-custom-ui` skill → shadcn Theme section.
-
-### 4. Get API Keys
-
-Two paths for development API keys:
-
-**Keyless (Automatic)**
-
-- On first SDK initialization, Clerk auto-generates dev keys and shows a "Configure your application" button in the bottom right of the running app
-- No manual key setup required, keys are created and injected automatically
-- Selecting "Configure your application" associates the auto-generated app with your Clerk account so you can edit it from the Dashboard
-- Simplest path for new projects
-
-**Manual (Dashboard)**
-
-- Get keys from [dashboard.clerk.com](https://dashboard.clerk.com/~/api-keys) if Keyless doesn't trigger
-- **Publishable Key**: Starts with `pk_test_` or `pk_live_`
-- **Secret Key**: Starts with `sk_test_` or `sk_live_`
-- Set as environment variables: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`
-
-## Migrating from Another Auth Provider
-
-If the project already has authentication, create a migration plan before replacing it.
-
-### Detect Existing Auth
-
-Check `package.json` for existing auth libraries:
-
-- `next-auth` / `@auth/core` → NextAuth/Auth.js
-- `@supabase/supabase-js` → Supabase Auth
-- `firebase` / `firebase-admin` → Firebase Auth
-- `@aws-amplify/auth` → AWS Cognito
-- `auth0` / `@auth0/nextjs-auth0` → Auth0
-- `passport` → Passport.js
-- Custom JWT/session implementation
-
-### Migration Process
-
-1. **Audit current auth** - Identify all auth touchpoints:
-   - Sign-in/sign-up pages
-   - Session/token handling
-   - Protected routes and middleware
-   - User data storage (database tables, external IDs)
-   - OAuth providers configured
-
-2. **Create migration plan** - Consider:
-   - **User data export** - Export users and import via Clerk's Backend API
-   - **Password hashes** - Clerk can upgrade hashes to Bcrypt transparently
-   - **External IDs** - Store legacy user IDs as `external_id` in Clerk
-   - **Session handling** - Existing sessions will terminate on switch
-
-3. **Choose migration strategy**:
-   - **Big bang** - Switch all users at once (simpler, requires maintenance window)
-   - **Trickle migration** - Run both systems temporarily (lower risk, higher complexity)
-
-### Migration Reference
-
-- **Migration Overview**: https://clerk.com/docs/guides/development/migrating/overview
-
-## SDK Notes
-
-### Package Names
-
-| Package        | Install                       |
-| -------------- | ----------------------------- |
-| Next.js        | `@clerk/nextjs`               |
-| React          | `@clerk/react`                |
-| Expo           | `@clerk/expo`                 |
-| React Router   | `@clerk/react-router`         |
-| TanStack Start | `@clerk/tanstack-react-start` |
-
-> **Core 2 ONLY (skip if current SDK):** React and Expo packages have different names: `@clerk/clerk-react` and `@clerk/clerk-expo` (with `clerk-` prefix).
-
-### ClerkProvider Placement (Next.js)
-
-`ClerkProvider` must be placed **inside `<body>`**, not wrapping `<html>`:
-
-```tsx
-// root layout.tsx
-export default function RootLayout({ children }) {
-  return (
-    <html>
-      <body>
-        <ClerkProvider>{children}</ClerkProvider>
-      </body>
-    </html>
-  );
-}
-```
-
-> **Core 2 ONLY (skip if current SDK):** `ClerkProvider` can wrap `<html>` directly.
-
-### Dynamic Rendering (Next.js)
-
-For dynamic rendering with auth data, use the `dynamic` prop:
-
-```tsx
-<ClerkProvider dynamic>{children}</ClerkProvider>
-```
-
-### Node.js Requirement
-
-Requires **Node.js 20.9.0** or higher.
-
-> **Core 2 ONLY (skip if current SDK):** Minimum Node.js 18.17.0.
-
-### Themes Package
-
-Themes are installed from `@clerk/ui`:
+Ask which framework to use, defaulting to Next.js. If a lockfile remains in the directory, use its package manager instead of asking: `pnpm-lock.yaml` → `pnpm`, `yarn.lock` → `yarn`, `bun.lock` or `bun.lockb` → `bun`, and `package-lock.json` → `npm`. If there's no lockfile, ask which package manager to use, defaulting to npm:
 
 ```bash
-npm install @clerk/ui
+npx -y clerk@latest init --framework <framework> --pm <package-manager>
 ```
 
-> **Core 2 ONLY (skip if current SDK):** Themes are from `@clerk/themes` instead of `@clerk/ui`.
+`init` creates the app in a new subdirectory, such as `my-clerk-next-app`, not in the current directory. Run the remaining steps from that subdirectory. As in Step 1a, add `--no-skills` if Clerk's skills are already available to you or the user declined them.
 
-### shadcn Theme
+`init` can create Next.js, React Router, Astro, Nuxt, TanStack Start, React, Vue, JavaScript/Vite, and Expo apps. For Express or Fastify, create the project with that platform's own tooling first, then follow Step 1a.
 
-If the project uses shadcn/ui (check for `components.json` in the project root), apply the shadcn theme so Clerk components match the app's design system:
+## Step 1c: Accountless development keys
+
+For a signed-out user on a framework with accountless support (Next.js, React Router, Astro, Nuxt, or TanStack Start), `init` provisions a claimable application and writes temporary keys to the detected environment file. Relay the filename and claim instruction printed by the CLI. The app stays unclaimed until the user runs `npx -y clerk@latest auth login`; don't run it unless asked. Use `--accountless` only to force this flow while signed in.
+
+Frameworks without accountless support need real API keys. There, `init` applies what setup it can and prints the remaining steps.
+
+## Step 2: Fall back to docs when init is incomplete
+
+If `init` reports the framework is unsupported or undetected, follow the quickstart instead. If it finishes but prints remaining steps, follow those, and use the matching quickstart for anything they don't cover.
+
+For an existing Clerk project with missing integration files, use that quickstart to add only the missing pieces without running `init`.
+
+`init` configures Next.js, React, React Router, Nuxt, TanStack Start, Astro, Vue, JavaScript/Vite, Expo, Express, and Fastify projects, existing iOS and macOS Xcode projects (see the [iOS setup prompt](https://clerk.com/docs/ios/getting-started/quickstart.md)), and Android Gradle projects (see the [Android setup prompt](https://clerk.com/docs/android/getting-started/quickstart.md)).
+
+Use the matching direct quickstart:
+
+- [Next.js](https://clerk.com/docs/nextjs/getting-started/quickstart.md?manual=1)
+- [React](https://clerk.com/docs/react/getting-started/quickstart.md?manual=1)
+- [React Router](https://clerk.com/docs/react-router/getting-started/quickstart.md?manual=1)
+- [Nuxt](https://clerk.com/docs/nuxt/getting-started/quickstart.md?manual=1)
+- [TanStack Start](https://clerk.com/docs/tanstack-react-start/getting-started/quickstart.md?manual=1)
+- [Astro](https://clerk.com/docs/astro/getting-started/quickstart.md?manual=1)
+- [Vue](https://clerk.com/docs/vue/getting-started/quickstart.md?manual=1)
+- [JavaScript or Vite](https://clerk.com/docs/js-frontend/getting-started/quickstart.md?manual=1)
+- [Expo](https://clerk.com/docs/expo/getting-started/quickstart.md?manual=1)
+- [Express](https://clerk.com/docs/expressjs/getting-started/quickstart.md?manual=1)
+- [Fastify](https://clerk.com/docs/fastify/getting-started/quickstart.md?manual=1)
+- [iOS](https://clerk.com/docs/ios/getting-started/quickstart.md?manual=1)
+- [Android](https://clerk.com/docs/android/getting-started/quickstart.md?manual=1)
+- [Chrome extension](https://clerk.com/docs/chrome-extension/getting-started/quickstart.md?manual=1)
+
+For everything else, use [Clerk's llms.txt](https://clerk.com/llms.txt).
+
+## Step 3: Add visible auth controls
+
+Skip this step for backend-only projects, such as Express or Fastify APIs. For Expo, iOS, and Android, use the native components from the matching quickstart instead.
+
+A web app needs sign-in, sign-up, and signed-in user controls, worked into the existing layout or navigation. If they already exist, adapt them instead of duplicating.
+
+For Next.js App Router, when `<Show>` renders in a Server Component, it reads the request, so wrap it in `<Suspense>`:
+
+```text
+import { SignInButton, SignUpButton, Show, UserButton } from '@clerk/nextjs'
+import { Suspense } from 'react'
+
+<Suspense>
+  <Show when="signed-out">
+    <SignInButton />
+    <SignUpButton />
+  </Show>
+  <Show when="signed-in">
+    <UserButton />
+  </Show>
+</Suspense>
+```
+
+Astro imports from `@clerk/astro/components`. Nuxt auto-imports the components; explicit imports come from `@clerk/nuxt/components`. Other frameworks use the same names from their Clerk package, such as `@clerk/vue` or `@clerk/react`.
+
+## Step 4: Verify
 
 ```bash
-npm install @clerk/ui
+npx -y clerk@latest doctor
 ```
 
-```tsx
-import { shadcn } from '@clerk/ui/themes';
+Then start the app, confirm the auth controls render, and fix anything the CLI reports.
 
-<ClerkProvider appearance={{ theme: shadcn }}>{children}</ClerkProvider>;
+Bot protection can block sign-ups in browsers you automate. If you test a new accountless app in one, run `npx -y clerk@latest users create --email <unique>+clerk_test@example.com --password <random-16-char-alphanumeric> --yes`, then sign in. If asked for a verification code, enter 424242. Tell the user you created this test user. For an existing app, ask the user before creating users. To test sign-up, use [`@clerk/testing`](https://clerk.com/docs/guides/development/testing/playwright/overview.md).
+
+## Step 5: If using shadcn/ui
+
+If `components.json` exists in the project root, add `@clerk/ui` with the project's package manager. Match the lockfile: `pnpm-lock.yaml` → `pnpm add`, `yarn.lock` → `yarn add`, `bun.lock` or `bun.lockb` → `bun add`, `package-lock.json` → `npm install`.
+
+Apply the theme in your provider:
+
+```text
+import { shadcn } from '@clerk/ui/themes'
+
+<ClerkProvider appearance={{ theme: shadcn }}>{children}</ClerkProvider>
 ```
 
-Also import the shadcn CSS in your global styles:
+Add to global CSS:
 
 ```css
-@import 'tailwindcss';
 @import '@clerk/ui/themes/shadcn.css';
 ```
 
-> **Core 2 ONLY (skip if current SDK):** Import from `@clerk/themes` and `@clerk/themes/shadcn.css` instead.
+## Critical rules
 
-## Common Pitfalls
+- Use Node.js 20.9.0 or later for current Clerk SDKs.
+- Next.js 15+: `auth()` is async. Always `await auth()`.
+- For Next.js manual setup, name the middleware file from the installed `next` version: `proxy.ts` on Next.js 16+, `middleware.ts` on 15 and below. `init` creates the file when it handles setup.
+- Next.js: when `next.config` sets `cacheComponents: true` (the `create-next-app` default), `next build` fails on request data read outside `<Suspense>`. Wrap `<Show>` rendered in a Server Component, and any Server Component that calls `auth()` or `currentUser()`, in `<Suspense>`, as close to the auth-dependent UI as possible. Wrap catch-all `<SignIn />`, `<SignUp />`, `<UserProfile />`, and `<OrganizationProfile />` pages in `<Suspense>` too, including the sign-in and sign-up pages the Clerk CLI creates. See [Read auth data inside Suspense](https://clerk.com/docs/guides/development/rendering-modes.md#read-auth-data-inside-suspense) and [Prebuilt components on catch-all routes](https://clerk.com/docs/guides/development/rendering-modes.md#prebuilt-components-on-catch-all-routes).
+- For current Next.js SDKs, `ClerkProvider` goes inside `<body>`, not around `<html>`.
+- Never expose `CLERK_SECRET_KEY` in client code.
+- For fresh setups, use the current framework package, such as `@clerk/nextjs`, `@clerk/react`, `@clerk/expo`, `@clerk/react-router`, or `@clerk/tanstack-react-start`.
+- Do not read or print existing environment variable files; ask the user for any missing non-sensitive configuration.
 
-> **Run `clerk doctor` first.** It checks framework integration, env vars, middleware presence, and SDK install status. Fixes a lot of these in one shot.
+## After setup
 
-| Issue                       | Solution                                                                    |
-| --------------------------- | --------------------------------------------------------------------------- |
-| Missing `await` on `auth()` | In Next.js 15+, `auth()` is async: `const { userId } = await auth()`        |
-| Exposing `CLERK_SECRET_KEY` | Never use the secret key in client code; only `NEXT_PUBLIC_*` keys are safe |
-| Missing middleware matcher  | Include API routes: `matcher: ['/((?!._\\.._                                | _next).*)', '/']` |
-| ClerkProvider placement     | Must be inside `<body>` in root layout (Core 2: could wrap `<html>`)        |
-| Auth routes not public      | Allow `/sign-in`, `/sign-up` in middleware config                           |
-| Landing page requires auth  | To keep "/" public, exclude it: `matcher: ['/((?!._\\.._                    | _next             | ^/$)._)', '/api/(._)']` |
-| Wrong import path           | Server code uses `@clerk/nextjs/server`, client uses `@clerk/nextjs`        |
-| Wrong package name          | Use `@clerk/react` not `@clerk/clerk-react` (Core 2 naming)                 |
+Have the user sign up as their first test user. Congratulate them once the profile icon appears in the nav.
 
-## See Also
+Ask how users should sign up and sign in: email, phone, username, and social providers. The app must be claimed before changing these settings.
 
-- `clerk-custom-ui` - Custom sign-in/up components
-- `clerk-nextjs-patterns` - Advanced Next.js patterns
-- `clerk-react-patterns` - React SPA patterns
-- `clerk-react-router-patterns` - React Router patterns
-- `clerk-vue-patterns` - Vue patterns
-- `clerk-nuxt-patterns` - Nuxt patterns
-- `clerk-astro-patterns` - Astro patterns
-- `clerk-tanstack-patterns` - TanStack Start patterns
-- `clerk-chrome-extension-patterns` - Chrome Extension patterns
-- `clerk-orgs` - B2B multi-tenant organizations
-- `clerk-webhooks` - Webhook → database sync
-- `clerk-testing` - E2E testing setup
-- `clerk-swift` - Native iOS auth
-- `clerk-android` - Native Android auth
-- `clerk-expo` - Expo / React Native auth
-- `clerk-backend-api` - Backend REST API explorer
+If `init` created the app in this session and no SDK claim file exists, use the `init` claim steps below. Otherwise, if `.clerk/keyless.json` (`init`) or `.clerk/.tmp/keyless.json` (SDK) exists, ask which app the project should use before anyone signs in or links it.
 
-## Documentation
+If both claim files exist, stop before `auth login`, `open`, or `link`: `open` prefers the `init` claim, even if the user chose the SDK app. Have the user identify which claim belongs to the app whose keys the project uses, move the other file out of the project, and keep it private. Never read the claim files or keys. Continue only after the user confirms that the remaining file and the project's keys belong to the chosen app.
 
-- **Quickstart Overview**: https://clerk.com/docs/getting-started/quickstart/overview
-- **Migration Guide**: https://clerk.com/docs/guides/development/migrating/overview
-- **Full Documentation**: https://clerk.com/docs
+- **`init` claim:** If this is the chosen app, have the user run `npx -y clerk@latest auth login`. On older CLIs, signing in from this folder claims the `init` app and replaces the project's keys; a signed-out `npx -y clerk@latest link` can start that sign-in. If the user chose another app, have them sign in from another folder first.
+- **SDK claim:** Have the user run `npx -y clerk@latest open` in their own terminal to open the claim page, then `npx -y clerk@latest link`. Signing in cannot claim an SDK-created app.
+
+Once the app is claimed, review settings with `npx -y clerk@latest config pull` and change them with `npx -y clerk@latest config patch` (supports `--dry-run`), or use the Clerk Dashboard. See [sign-up and sign-in options](https://clerk.com/docs/guides/configure/auth-strategies/sign-up-sign-in-options.md).
+
+When the user is ready for production:
+
+1. Have them claim the app as described above, because unclaimed apps and temporary keys aren't production-ready. If `deploy` says the project isn't linked, follow its instructions.
+2. Ask which domain they own for production, one whose DNS they can change (not a hosting provider's URL such as `*.vercel.app`), and run `npx -y clerk@latest deploy --mode agent --domain <domain>`. It creates the production instance and prints a JSON report.
+3. Follow the report's `nextAction` at each step. If a command from the report or `nextAction` calls plain clerk, as all of them do on Windows (inside the `hostSetup` command too), and clerk isn't installed, replace that call with `npx -y clerk@latest` and keep the rest of the command, including in commands the user runs. `nextAction`'s OAuth steps need bash or zsh. In any other shell, have the user enter the OAuth credentials by running `npx -y clerk@latest deploy` in their own terminal, from the project directory. Pass on each `oauth.setup` entry's `note` to the user, such as Google's reminder to set the OAuth consent screen to "In production".
+4. Check progress with `npx -y clerk@latest deploy status --mode agent`, which exits 0 only when production is complete.
+5. On Vercel, if `vercel` isn't installed or you can't run bash or zsh, follow step 6. Otherwise, run `vercel whoami` yourself, which doesn't start a login just because you're logged out. If it prints "Logged out.", have the user run `vercel login` in their own terminal. Then, if the user confirms this directory is linked to the Vercel project that serves this app in production, copy the production keys by running the `command` of the report's `hostSetup` entry as given. If either command doesn't exit, Vercel is waiting for a browser login: stop it, have the user run the command that hung in their own terminal, from the project directory, and finish the login it opens, then rerun.
+6. On any other host, or if the user doesn't confirm the Vercel project, have the user run the `env pull --print` command from `nextAction` in a separate terminal in the project directory, not through your session, and add the printed lines to the host. Never write your own pipe into a host's CLI.
+7. Have the user add the other Clerk variables from their env file to the host too.
+
+Then offer Organizations — multi-tenancy, team invitations, roles and permissions, and enterprise SSO.
+
+If yes:
+
+1. Run `npx -y clerk@latest enable orgs`.
+2. Add `<OrganizationSwitcher />` next to the existing `<UserButton />`, or the framework equivalent.
+3. Have them create an organization from the switcher and invite a teammate.
+
+If no, point them to [Organizations](https://clerk.com/docs/guides/organizations/overview), [Components](https://clerk.com/docs/reference/components/overview), and the [Clerk Dashboard](https://dashboard.clerk.com/).

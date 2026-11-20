@@ -8,6 +8,7 @@ import {
   getTableElement,
   $getNodeTriplet,
   $isTableCellNode,
+  $computeTableMap,
   $isTableSelection,
   TableCellHeaderStates,
   $insertTableRowAtSelection,
@@ -15,6 +16,7 @@ import {
   $insertTableColumnAtSelection,
   $deleteTableColumnAtSelection,
   $computeTableMapSkipCellCheck,
+  $computeTableCellRectBoundary,
   getTableObserverFromTableElement,
   $getTableCellNodeFromLexicalNode,
   $getTableRowIndexFromTableCellNode,
@@ -74,12 +76,15 @@ const VERTICAL_ALIGN_OPTIONS = [
   { icon: ArrowDownToLineIcon, label: 'Align bottom', value: 'bottom' },
 ] as const;
 
-function computeSelectionCount(selection: TableSelection) {
-  const selectionShape = selection.getShape();
+function $computeSelectionCount(selection: TableSelection) {
+  const [anchorCell, , tableNode] = $getNodeTriplet(selection.anchor);
+  const [focusCell] = $getNodeTriplet(selection.focus);
+  const [tableMap, anchorCellMap, focusCellMap] = $computeTableMap(tableNode, anchorCell, focusCell);
+  const { maxColumn, maxRow, minColumn, minRow } = $computeTableCellRectBoundary(tableMap, anchorCellMap, focusCellMap);
 
   return {
-    columns: selectionShape.toX - selectionShape.fromX + 1,
-    rows: selectionShape.toY - selectionShape.fromY + 1,
+    columns: maxColumn - minColumn + 1,
+    rows: maxRow - minRow + 1,
   };
 }
 
@@ -254,7 +259,7 @@ export default function TableActionMenuPlugin({ anchor }: { anchor: HTMLElement 
         cachedSelectionRef.current = selection ? selection.clone() : null;
 
         if ($isTableSelection(selection)) {
-          const counts = computeSelectionCount(selection);
+          const counts = $computeSelectionCount(selection);
 
           setSelectionCounts(counts);
           setCanMergeCells(!selection.anchor.is(selection.focus) && (counts.columns > 1 || counts.rows > 1));

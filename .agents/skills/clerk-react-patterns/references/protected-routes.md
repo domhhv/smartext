@@ -5,28 +5,28 @@
 Wrap protected routes with a guard component:
 
 ```tsx
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '@clerk/react';
+import { Navigate, Outlet } from 'react-router-dom'
+import { useAuth } from '@clerk/react'
 
 export function ProtectedRoute() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth()
 
-  if (!isLoaded) return <div>Loading...</div>;
-  if (!isSignedIn) return <Navigate to="/sign-in" replace />;
+  if (!isLoaded) return <div>Loading...</div>
+  if (!isSignedIn) return <Navigate to="/sign-in" replace />
 
-  return <Outlet />;
+  return <Outlet />
 }
 ```
 
 ## Router Setup (React Router v6/v7)
 
 ```tsx
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ClerkProvider } from '@clerk/react';
-import { ProtectedRoute } from './ProtectedRoute';
-import { Dashboard } from './Dashboard';
-import { Settings } from './Settings';
-import { SignInPage } from './SignInPage';
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { ClerkProvider } from '@clerk/react'
+import { ProtectedRoute } from './ProtectedRoute'
+import { Dashboard } from './Dashboard'
+import { Settings } from './Settings'
+import { SignInPage } from './SignInPage'
 
 function App() {
   return (
@@ -41,7 +41,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </ClerkProvider>
-  );
+  )
 }
 ```
 
@@ -50,17 +50,17 @@ function App() {
 ## Org-Gated Route
 
 ```tsx
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '@clerk/react';
+import { Navigate, Outlet } from 'react-router-dom'
+import { useAuth } from '@clerk/react'
 
 export function OrgRoute() {
-  const { isLoaded, isSignedIn, orgId } = useAuth();
+  const { isLoaded, isSignedIn, orgId } = useAuth()
 
-  if (!isLoaded) return <div>Loading...</div>;
-  if (!isSignedIn) return <Navigate to="/sign-in" replace />;
-  if (!orgId) return <Navigate to="/select-org" replace />;
+  if (!isLoaded) return <div>Loading...</div>
+  if (!isSignedIn) return <Navigate to="/sign-in" replace />
+  if (!orgId) return <Navigate to="/select-org" replace />
 
-  return <Outlet />;
+  return <Outlet />
 }
 ```
 
@@ -69,15 +69,15 @@ export function OrgRoute() {
 For simpler cases, wrap with `<SignedIn>` / `<SignedOut>` equivalents:
 
 ```tsx
-import { Show } from '@clerk/react';
-import { Navigate } from 'react-router-dom';
+import { Show } from '@clerk/react'
+import { Navigate } from 'react-router-dom'
 
 export function Dashboard() {
   return (
     <Show when="signed-in" fallback={<Navigate to="/sign-in" replace />}>
       <DashboardContent />
     </Show>
-  );
+  )
 }
 ```
 

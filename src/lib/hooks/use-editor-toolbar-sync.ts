@@ -1,18 +1,12 @@
+import { HistoryExtension } from '@lexical/history';
 import { $isLinkNode } from '@lexical/link';
 import { $isListNode } from '@lexical/list';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { useExtensionSignalValue } from '@lexical/react/useExtensionSignalValue';
 import { $isHeadingNode } from '@lexical/rich-text';
 import { $getSelectionStyleValueForProperty } from '@lexical/selection';
 import { $isTableSelection, $getTableCellNodeFromLexicalNode } from '@lexical/table';
-import { mergeRegister } from '@lexical/utils';
-import {
-  $getSelection,
-  $isElementNode,
-  CAN_REDO_COMMAND,
-  CAN_UNDO_COMMAND,
-  $isRangeSelection,
-  COMMAND_PRIORITY_CRITICAL,
-} from 'lexical';
+import { $getSelection, $isElementNode, $isRangeSelection } from 'lexical';
 import * as React from 'react';
 
 import { ToolbarStateContext } from '@/components/providers/editor-toolbar-state-provider';
@@ -26,6 +20,8 @@ export default function useEditorToolbarSync() {
   const { updateToolbarState } = React.use(ToolbarStateContext);
   const foreground = useCssVar('--foreground');
   const background = useCssVar('--background');
+  const canUndo = useExtensionSignalValue(HistoryExtension, 'canUndo');
+  const canRedo = useExtensionSignalValue(HistoryExtension, 'canRedo');
 
   const currentForegroundColor = React.useMemo(() => {
     const [r, g, b, a] = cssColorToRgba(foreground);
@@ -210,28 +206,16 @@ export default function useEditorToolbarSync() {
   }, [updateToolbarState, editor, currentForegroundColor, currentBackgroundColor]);
 
   React.useEffect(() => {
-    return mergeRegister(
-      editor.registerUpdateListener(({ editorState }) => {
-        editorState.read($updateToolbar);
-      }),
-      editor.registerCommand<boolean>(
-        CAN_UNDO_COMMAND,
-        (payload) => {
-          updateToolbarState('canUndo', payload);
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read($updateToolbar);
+    });
+  }, [$updateToolbar, editor]);
 
-          return false;
-        },
-        COMMAND_PRIORITY_CRITICAL
-      ),
-      editor.registerCommand<boolean>(
-        CAN_REDO_COMMAND,
-        (payload) => {
-          updateToolbarState('canRedo', payload);
+  React.useEffect(() => {
+    updateToolbarState('canUndo', canUndo);
+  }, [canUndo, updateToolbarState]);
 
-          return false;
-        },
-        COMMAND_PRIORITY_CRITICAL
-      )
-    );
-  }, [$updateToolbar, updateToolbarState, editor]);
+  React.useEffect(() => {
+    updateToolbarState('canRedo', canRedo);
+  }, [canRedo, updateToolbarState]);
 }

@@ -94,7 +94,7 @@ clerk users create -d '{
 
 When signing in as either user in a browser or Playwright, enter `424242` at the OTP prompt.
 
-These patterns only apply to development instances. In production, client trust blocks sign-in regardless of suffix or number, and using real-looking test addresses is highly discouraged. Test addresses and numbers do not count against the dev-instance monthly caps (20 SMS, 100 emails). See [Clerk's test emails and phones reference](https://clerk.com/docs/guides/development/testing/test-emails-and-phones) for the full contract.
+These patterns only apply to development instances. In production, Device Trust blocks sign-in regardless of suffix or number, and using real-looking test addresses is highly discouraged. Test addresses and numbers do not count against the dev-instance monthly caps (20 SMS, 100 emails). See [Clerk's test emails and phones reference](https://clerk.com/docs/guides/development/testing/test-emails-and-phones) for the full contract.
 
 ## Organizations
 
@@ -122,16 +122,18 @@ clerk api /organizations/org_abc123/memberships/user_xyz -X DELETE --dry-run
 clerk api /organizations/org_abc123/invitations -d '{"email_address":"new@acme.com","role":"org:member"}'
 ```
 
-If organization endpoints return `organization_not_enabled_in_instance`, enable the feature first:
+If organization endpoints return `organization_not_enabled_in_instance`, enable the feature first with the dedicated toggle:
 
 ```sh
 # Inspect org settings
 clerk api /instance/organization_settings
 
 # Preview, then enable organizations for this instance
-clerk api /instance/organization_settings -X PATCH -d '{"enabled":true}' --dry-run
-clerk api /instance/organization_settings -X PATCH -d '{"enabled":true}' --yes
+clerk enable orgs --dry-run
+clerk enable orgs --yes
 ```
+
+For org settings the toggle flags don't cover, fall back to `clerk config patch --json '{"organization_settings":{...}}'`. Deeper org workflows (roles, memberships, components) live in the `clerk-orgs` skill.
 
 ## Sessions
 
@@ -141,8 +143,29 @@ clerk api '/sessions?user_id=user_abc123&status=active'
 
 # Revoke a session
 clerk api /sessions/sess_abc123/revoke -X POST
+```
 
-# Create an impersonation / sign-in token (for testing)
+## Impersonation (sign in as a user)
+
+Impersonation goes through `clerk impersonate` (alias `imp`): it creates an actor token stamped `cli:<your-email>` so every impersonation session is traceable. Requires `clerk auth login`.
+
+```sh
+# Print the sign-in URL for a user (agent-safe: no browser, no prompt)
+clerk imp user_abc123 --print
+
+# Resolve by exact email instead of user ID
+clerk imp alice@example.com --print
+
+# Short-lived token, no confirmation prompt
+clerk imp user_abc123 --yes --expires-in 900
+
+# Revoke a pending actor token (the id is printed at creation - capture it then)
+clerk imp revoke act_abc123
+```
+
+To mint a one-time **sign-in token** instead - for building custom token sign-in flows, signing in _as_ the user with no actor audit trail - use the raw API:
+
+```sh
 clerk api /sign_in_tokens -d '{"user_id":"user_abc123"}'
 ```
 
@@ -165,6 +188,132 @@ clerk api /jwt_templates -d '{
   "lifetime": 60
 }'
 ```
+
+## Webhooks (local testing)
+
+`listen` talks only to the Svix relay and `verify` is pure local HMAC - neither needs auth or a linked project.
+
+```sh
+# 1. Mint a token and open a pinned tunnel that forwards deliveries to your handler.
+#    The command prints a relay inbox URL (https://webhooks.clerk.com/in/c_.../).
+clerk webhooks listen --token "$(clerk webhooks token)" --forward-to http://localhost:3000/api/webhooks
+
+# 2. Add that relay URL as a webhook endpoint in the Clerk Dashboard.
+#    Real events now stream to your terminal and forward to your local handler.
+#    svix-* headers are preserved, so verifyWebhook() in your handler still
+#    verifies against that endpoint's signing secret.
+
+# 3. Capture events for replay/verification (agent mode emits NDJSON automatically)
+clerk webhooks listen --forward-to http://localhost:3000/api/webhooks --json > events.ndjson
+
+# 4. Verify a saved delivery offline against the endpoint's signing secret
+clerk webhooks verify --secret whsec_... --delivery @event.json
+```
+
+Pin the token (`--token`) whenever you want the inbox URL to survive across machines and restarts - otherwise the relay URL can change and the Dashboard endpoint needs re-pointing.
+
+## Application Logs
+
+`clerk logs` reads the instance's [Application Logs](https://clerk.com/docs/guides/dashboard/logs/application-logs): sign-ins, sign-ups, user and session changes, and the other events Clerk records. Reach for it before guessing from code when a user can't sign in, a sign-up stalls, or something changed and nobody knows why. Any instance secret key can read its logs; target another app or production with `--app <id> --instance prod`.
+
+Logs go back only as far as the plan's log retention. When a search reaches that limit, `cursor.retention_limit_reached` is `true` and `cursor.retention_days` says how far back results go, so an empty result there doesn't prove the event never happened.
+
+### Discover event types and payload fields
+
+Event type names and payload paths vary by instance (`sms.*` and `email.*` types appear only once enabled). Don't guess them; read them once and save the result:
+
+```sh
+# Every event type with its payload fields, in one call
+clerk logs schema --json > /tmp/log-types.json
+jq -r '.data[] | "\(.event_type)\t\(.description)"' /tmp/log-types.json
+
+# The payload fields of one type, a wildcard, or a family
+clerk logs schema sign_in.completed --json
+clerk logs schema 'sign_in.*' --json      # only the fields every sign_in type shares
+```
+
+Each `fields[]` entry has a `path`, a `type`, `optional`, and an `enum` list for enum-backed fields. Those paths are what `--payload-filter` and `--fields` take.
+
+### Why did a user's sign-in fail?
+
+```sh
+# 1. Find the user's recent sign-in flows. --identifier is an exact email, phone,
+#    username, or web3 wallet; use --user user_... instead when you have the ID.
+clerk logs --grouped --group-type sign_in --identifier alice@example.com --since 7d --json > /tmp/sign-ins.json
+jq '.data[] | select(.object == "log_group") | {group_id, status, started_at, event_count, has_more_events}' /tmp/sign-ins.json
+
+# 2. Read every event of the flow that went wrong, oldest first
+clerk logs get sia_abc123 --json > /tmp/sign-in.json
+jq '.data[] | {type, event_time, actor, subject, payload}' /tmp/sign-in.json
+```
+
+The event types in step 2 tell the story of the attempt; look up the fields of any type you don't recognize with `clerk logs schema <type>`. For a sign-up, use `--group-type sign_up` and the `sua_...` ID. Without `--grouped`, `clerk logs --identifier alice@example.com --since 7d` lists the same events flat, newest first, including those outside any flow. If nothing comes back, widen `--since`, check that you're on the right instance (`--instance prod`), and check `cursor.retention_limit_reached`.
+
+### Find failed or unfinished flows
+
+```sh
+# Flows that concluded as failed in the last hour
+clerk logs --grouped --status failed --since 1h --json > /tmp/failed.json
+jq '.data[] | {group_id, group_type, status, subject}' /tmp/failed.json
+
+# All recent flows, including ones that never concluded
+clerk logs --grouped --since 1h --json > /tmp/flows.json
+jq '.data[] | select(.object == "log_group" and .status == null) | {group_id, group_type, subject, event_count}' /tmp/flows.json
+```
+
+`--status` only matches a flow that concluded. A user who gave up midway leaves a flow with `status: null`, which neither `--status completed` nor `--status failed` returns, so when `--status failed` finds nothing, list the flows without `--status` and look at the ones with no status. `--group-type` and `--status` are repeatable, and both drop the logs that belong to no flow. With `--grouped`, `--limit` counts flows (up to 100), and the time range picks flows by when they started.
+
+### Filter on a payload field
+
+```sh
+# 1. Find the payload path
+clerk logs schema user.created --json | jq -r '.fields[].path'
+
+# 2. Filter on it. --payload-filter is repeatable and needs --type.
+clerk logs --type user.created --payload-filter user_id=user_abc123 --since 1h --json
+clerk logs --type sms.failed --payload-filter phone_number=+15555550100 --since 1d --json
+
+# Return only some payload fields per log (also needs --type)
+clerk logs --type user.created --fields email_address,username --since 1d --json
+```
+
+The API checks that the path exists for the type; a path it rejects fails with an error that lists the allowed paths. By default a log must match every filter; `--match any` keeps logs that match at least one of the string and payload filters.
+
+### Read the rest of a flow
+
+A `--grouped` item carries only a flow's first events. When it has `has_more_events: true`, continue from its `events_cursor`, passing the same event filters you used for the list, since the cursor doesn't carry them:
+
+```sh
+jq -r '.data[] | select(.has_more_events) | "\(.group_id) \(.events_cursor)"' /tmp/flows.json
+clerk logs get sia_abc123 --cursor <events_cursor> --json
+```
+
+`clerk logs get` pages forward with `cursor.next` the same way, until it is `null`.
+
+### Page through a long search
+
+```sh
+clerk logs --type 'sign_in.*' --since 7d --limit 500 --json > /tmp/logs-0.json
+jq -r '.cursor.next' /tmp/logs-0.json                 # null when there are no more
+clerk logs --type 'sign_in.*' --since 7d --limit 500 --cursor <cursor.next> --json > /tmp/logs-1.json
+```
+
+Pass the same filters and time range with each `--cursor`. A grouped cursor and a flat cursor aren't interchangeable.
+
+### Watch new logs as they happen
+
+```sh
+# Long-running: start it in the background, reproduce the problem, then read the file.
+# Output is NDJSON, one log object per line, with no { data, cursor } envelope.
+# stderr keeps the retry warnings, so you can tell whether the follow is still healthy.
+clerk logs --follow --type 'sign_in.*' --json > /tmp/live.ndjson 2> /tmp/live.err &
+FOLLOW_PID=$!
+# ...reproduce the problem, then:
+jq -c '{type, event_time, subject}' /tmp/live.ndjson
+kill $FOLLOW_PID
+```
+
+`--follow` first prints the newest `--limit` logs (honoring `--since`/`--from` and every filter), then polls every `--interval` (default `2s`) and prints new logs oldest first. It's for live debugging, not export: a log that reaches the API more than 10 seconds after a newer one was printed may be missed (after a quiet stretch, more than 5 minutes late), so an event missing from the stream doesn't prove it never happened; re-check with a `clerk logs` search over the same range, and use [log drains](https://clerk.com/docs/guides/dashboard/logs/application-logs#export-logs) to export or sync logs. Stop a background follow with `kill`; in a terminal, Ctrl-C exits `130`. It can't be combined with `--to`, `--cursor`, or `--grouped`.
 
 ## Instance configuration
 
@@ -196,14 +345,13 @@ clerk config put --file config.prod.json --instance prod --yes
 # Pull dev keys into .env.local (auto-detects framework and key names)
 clerk env pull
 
-# Pull production keys
-clerk env pull --instance prod
-
 # Target a specific file
 clerk env pull --file .env
 ```
 
 `env pull` merges into the existing file: existing Clerk keys are updated in place; new ones are appended under a `# Clerk` header; everything else is preserved.
+
+To copy production keys to the host, follow [Copy the production keys to the host](agent-mode.md#copy-the-production-keys-to-the-host). Don't pull them into a local env file: that writes over the development keys.
 
 ## Applications (Platform API)
 
